@@ -1,0 +1,56 @@
+name: Architecture or RFC proposal
+description: Start a consequential, cross-cutting, high-risk, or hard-to-reverse decision.
+title: "[Architecture]: "
+labels:
+  - "type: architecture"
+  - "status: triage"
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and evidence
+      description: What current behavior, constraint, measurement, or incident makes a decision necessary?
+    validations:
+      required: true
+  - type: textarea
+    id: drivers
+    attributes:
+      label: Decision drivers
+      description: Which outcomes and constraints should decide between options?
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommended direction
+      description: State the proposal, scope, and why it is preferable now.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Credible alternatives
+      description: Compare tradeoffs, including doing nothing and reversibility.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences and risks
+      description: Cover compatibility, data, security/privacy, operations, cost, ownership, migration, and rollback.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: What experiment, benchmark, test, or operating measure will prove or disprove the decision?
+    validations:
+      required: true
+  - type: checkboxes
+    id: artifacts
+    attributes:
+      label: Durable artifacts
+      options:
+        - label: I will create an RFC if accepted discussion needs a full design before implementation.
+        - label: I will add or supersede an ADR when a durable decision is accepted.

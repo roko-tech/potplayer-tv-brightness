@@ -1,0 +1,67 @@
+name: Bug report
+description: Report reproducible behavior that differs from the intended contract.
+title: "[Bug]: "
+labels:
+  - "type: bug"
+  - "status: triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, private data, or vulnerability details. Follow SECURITY.md for security reports.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User impact
+      description: Who is affected, what can they not accomplish, and how serious is it?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest repeatable starting state and steps. Attach sanitized evidence where useful.
+      placeholder: |
+        1. Start from ...
+        2. Perform ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: State the intended observable result and its source (requirement, documentation, or prior release).
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and evidence
+      description: Include exact errors, timestamps, logs, screenshots, or artifact identifiers after removing sensitive data.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Version/commit, OS, runtime/browser/device, installation method, configuration class, and relevant dependencies.
+    validations:
+      required: true
+  - type: textarea
+    id: regression
+    attributes:
+      label: Regression and scope
+      description: Did this ever work? What versions, users, data, or environments are affected or unaffected?
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround or recovery
+      description: Describe any safe workaround, data-recovery need, or destructive action already attempted.
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched for an existing issue and removed secrets/private data from this report.
+          required: true

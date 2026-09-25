@@ -1,0 +1,7 @@
+# Replace or extend these defaults when project ownership changes.
+* @rokogan
+/.github/ @rokogan
+/AGENTS.md @rokogan
+/SECURITY.md @rokogan
+/docs/architecture/decisions/ @rokogan
+/docs/security/ @rokogan
