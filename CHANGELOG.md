@@ -6,15 +6,7 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 
 ### Added
 
-- Initial project governance, documentation, AI instructions, GitHub workflows, and repository validation.
-- `scripts/github_settings.py` to check or apply the repository, label, Actions, and Dependabot baseline.
-
-### Changed
-
-- CI cancels superseded runs only for pull requests, so every commit pushed to `main` keeps its own result.
-- The no-AI-co-author-trailer rule now covers every AI tool, not only Codex.
-
-### Fixed
-
-- `scripts/verify.py` skips files ignored by `.gitignore`, such as dependencies and build or scratch output.
-- `scripts/verify.py` no longer requires the default ADR-0001 filename, and `PROJECT_SETUP.md` no longer says the file may be removed.
+- Tray app that sets the LG TV's OLED Pixel Brightness to a chosen value while PotPlayer plays, and restores the original on pause, stop, minimize, close, or Quit.
+- Original brightness saved per picture mode in `restore.json`, so crashes, reboots, a switched-off TV, and HDR switches still end at the original value. HDR and Dolby Vision modes are left unchanged.
+- Tray presets from 30 to 100, a status tooltip, and `scripts/tv_check.py` for live TV checks.
+- Project documentation, CI (ruff, mypy, unit tests on Ubuntu and Windows), and Dependabot for uv, based on roko-tech/project-starter.

@@ -1,53 +1,46 @@
 # Operations runbook
 
-- Status: Template; replace every instruction with tested project commands.
-- Service owner: Define
-- Escalation contact: Define
-- Last rehearsed: Never
-
-Do not present placeholders as executable instructions in a live service. Each production procedure needs an owner, prerequisites, safe command or UI path, expected output, failure branch, rollback, and last rehearsal date.
+- Status: Current (v0.1.0)
+- Service owner: @rokogan
+- Escalation contact: @rokogan
+- Last rehearsed: 2026-09-25 (start, crash, restart, and stop on the owner's PC)
 
 ## Service summary
 
-- User journey served:
-- Environments and URLs:
-- Deployment unit/artifact:
-- Data stores and external dependencies:
-- Dashboards, logs, traces, and alert routes:
-- Current release/version lookup:
+- User journey served: TV brightness follows PotPlayer playback.
+- Environment: the owner's Windows PC and LG C2 TV on the home network. No servers.
+- Deployment unit: this repository folder, run from source with `.venv\Scripts\pythonw.exe run.pyw`.
+- External dependency: the TV's SSAP API on port 3001.
+- Logs: `potplayer-tv-brightness.log` in the app folder. Status: tray icon tooltip.
+- Version: `git log -1` in the app folder.
 
-## Health assessment
+## Health check
 
-1. Confirm scope: one user, one tenant, one region, or global.
-2. Check user-journey indicators and recent deployments/configuration changes.
-3. Check dependency health, saturation, queue/backlog, and error classes.
-4. Correlate logs/traces using safe identifiers; do not copy sensitive payloads.
-5. Record timestamps, evidence, and uncertainty in the incident channel/ticket.
+1. Hover the tray icon: the tooltip shows the status (Idle, Watching, TV unreachable, HDR, or Restore waiting).
+2. `uv run python -m scripts.tv_check` confirms the TV is reachable and paired.
+3. Read the end of the log for errors.
 
-## Deploy
+## Start, stop, restart
 
-Define exact preflight checks, immutable artifact identification, migration order, deployment command, smoke test, monitoring window, and completion criteria. Prefer promotion of the artifact already validated by CI.
+- Start: `.venv\Scripts\pythonw.exe run.pyw` from the app folder, or the Startup shortcut in the [user guide](../user/README.md).
+- Stop: tray icon, then **Quit**. It restores the TV first (up to about 15 s if the TV is slow).
+- If the process is killed instead, nothing is lost: the original brightness stays in `restore.json` and is restored on the next start.
 
-## Roll back or roll forward
+## Update and roll back
 
-Define when rollback is safe, especially after schema or externally visible writes. Name the previous artifact, command, data compatibility requirement, verification, and escalation point. For irreversible data changes, provide a rehearsed roll-forward or restore procedure.
+```shell
+git pull
+uv sync --locked
+```
+
+Then Quit and start the app again. To roll back, `git checkout <previous commit>` and run `uv sync --locked`. There is no data migration; `settings.json` and `restore.json` are plain JSON.
 
 ## Common failure playbooks
 
-For each alert or common symptom, add:
-
-- user impact and urgency;
-- likely and dangerous causes;
-- read-only diagnostic steps first;
-- bounded mitigation;
-- validation and rollback;
-- evidence to preserve;
-- owner and follow-up issue.
-
-## Shutdown and restart
-
-Check active requests, jobs, migrations, and external side effects before shutdown. Drain or checkpoint work, preserve idempotency state, restart with known configuration, and verify the primary user journey—not only process health.
-
-## Incident closure
-
-Confirm recovery against service indicators and user behavior, communicate remaining risk, preserve a timeline, and create a postmortem for significant impact using [postmortem-template.md](postmortem-template.md).
+| Symptom | Diagnose | Fix |
+| --- | --- | --- |
+| "TV unreachable, retrying" | Is the TV on? `tv_check`; ping the IP | Correct `tv_host` in `settings.json` (consider a DHCP reservation for the TV), then restart the app |
+| Pairing prompt every time | Log shows pairing; key file missing or rejected | Accept the prompt; check that `tv-client-key.txt` is writable |
+| "Restore waiting for picture mode" | TV is in a different picture mode than when the movie started | Switch back to that mode, or set the value with `tv_check --set N` and delete `restore.json` |
+| Writes fail after a TV firmware update | `tv_check --set 20` returns an error | See the follow-up in [ADR-0002](../architecture/decisions/0002-control-tv-brightness-over-webos-ssap.md) |
+| No tray icon | Log says "Already running" | Another copy is running; check Task Manager for `pythonw.exe` |

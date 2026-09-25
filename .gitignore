@@ -1,4 +1,7 @@
 # Secrets and local configuration
+tv-client-key.txt
+settings.json
+restore.json
 .env
 .env.*
 !.env.example

@@ -1,76 +1,57 @@
 # Architecture overview
 
-- Status: Starter baseline; replace project-specific placeholders before the first production feature.
-- Owner: Technical owner
-- Last reviewed: 2026-08-20
+- Status: Current (v0.1.0)
+- Owner: @rokogan
+- Last reviewed: 2026-09-25
 
-## Default architecture
-
-Start with a modular monolith: one deployable application with explicit internal modules, plus only the external infrastructure the first user journey actually requires. This reduces distributed-system coordination while preserving boundaries that can be extracted later if measured scale, isolation, deployment cadence, or ownership demands it.
-
-Suggested dependency direction:
-
-```text
-Interfaces (HTTP, CLI, UI, jobs)
-        -> Application use cases
-        -> Domain rules
-        -> Ports owned by the application/domain
-
-Infrastructure adapters (database, queues, vendors)
-        -> Implement those ports
-```
-
-Domain and application logic must not depend on a web framework, database client, or vendor SDK unless the project records a deliberate exception. Modules own their invariants and data access; cross-module interaction uses explicit APIs or events rather than reaching into another module's tables or internals.
+One Python process on the Windows PC: a tray icon plus a polling thread. No server, database, or cloud service.
 
 ## System context
 
-Replace this generic C4-style view with real people, systems, trust boundaries, and data classes.
-
 ```mermaid
 flowchart LR
-    User[Primary user] -->|Uses| Product[Product under development]
-    Operator[Operator] -->|Operates| Product
-    Product -->|Minimum required integration| External[External system]
-    Product -->|Stores approved state| Data[(Primary data store)]
+    Owner[Owner] -->|plays, pauses, minimizes| PotPlayer[PotPlayer window]
+    Owner -->|picks movie brightness, Quit| App[PotPlayer TV Brightness tray app]
+    App -->|WM_USER 0x5006 play state, window state| PotPlayer
+    App -->|SSAP over TLS WebSocket :3001, LAN| TV[LG webOS TV]
+    App -->|settings, key, pending restore, log| Files[(Local files in app folder)]
 ```
 
-## Containers and runtime
+## Runtime
 
-```mermaid
-flowchart TB
-    Client[User interface or client] --> App[Modular application]
-    App --> Store[(Owned data store)]
-    App --> Provider[External provider adapter]
-    Scheduler[Optional scheduler] --> App
-    App --> Telemetry[Logs, metrics, traces]
-```
-
-For each real container, document its responsibility, owner, technology, deployment unit, inputs/outputs, data classification, scaling limit, and failure behavior.
+- **Main thread:** the pystray tray icon and menu.
+- **Poll thread:** every 0.5 s asks PotPlayer for its state, then calls `Controller.tick`. All TV network calls happen here, so a slow TV never blocks the menu.
+- A named mutex (`Local\potplayer-tv-brightness`) allows a single instance.
+- **Quit** stops the poll thread, which restores the TV before the process exits.
 
 ## Module map
 
 | Module | Responsibility | Owns data | May depend on | Public contract |
 | --- | --- | --- | --- | --- |
-| Define during setup | One cohesive business capability | Define | Define | Define |
+| `controller.py` | Boost/restore rules: settle time, HDR skip, per-mode originals, retries | `restore.json` via `RestoreStore` | Standard library only | `Controller.tick(watching, now)`, `shutdown()`; `TV`/`TVSession` protocols, `Picture`, `TVError` |
+| `tv.py` | LG SSAP client: pairing, read picture mode and brightness, set brightness | `tv-client-key.txt` | `controller` types, `websocket-client` | `LGTV(host, key_file).session()` |
+| `potplayer.py` | Is any PotPlayer window playing and not minimized or hidden | None | Win32 `user32` via `ctypes` | `is_watching()` |
+| `app.py` | Settings, logging, tray, poll thread, single instance | `settings.json`, log file | All of the above, `pystray`, `Pillow` | `main()` (started by `run.pyw`) |
 
-Rules:
+Dependency direction: `app` → `controller` ← `tv`. The controller defines the TV port it needs, and `tv.py` implements it. `potplayer.py` is a leaf.
 
-- Keep business invariants with the module that owns them.
-- Validate untrusted data at the boundary and convert it to explicit internal types.
-- Make transactions and consistency expectations visible.
-- Hide vendor-specific behavior behind narrow adapters when switching, testing, or failure isolation has real value.
-- Prefer synchronous calls inside the process. Introduce queues/events only for a defined durability, latency, load, or decoupling requirement.
+## Data
 
-## Data and contracts
+| File | Content | Classification |
+| --- | --- | --- |
+| `settings.json` | TV IP address, movie brightness | Local config |
+| `tv-client-key.txt` | TV pairing key | Secret (controls the TV) |
+| `restore.json` | `{picture mode: original brightness}` while a restore is owed | Local state |
+| `potplayer-tv-brightness.log` | Status changes and errors | Local, no secrets |
 
-Document schemas, ownership, classification, retention, deletion, migrations, idempotency, compatibility, and backup requirements. Public APIs and durable event formats are versioned contracts. Database migrations must be forward-safe and have a rollback or roll-forward strategy.
+All are ignored by Git. Nothing else is stored or sent anywhere.
 
-## Reliability and observability
+## Reliability
 
-Define timeouts, retries with bounds/jitter, idempotency, backpressure, graceful degradation, and dependency failure behavior at real boundaries. Instrument user journeys and service-level indicators, not only host health. Logs must be structured, actionable, and free of unapproved sensitive data.
+- TV calls use a fresh connection per operation with a 3 s timeout (60 s while an Accept prompt is on screen). A TV that is off or rebooting needs no reconnect logic.
+- A PotPlayer state must hold for 1 s before the app acts (no flicker between playlist items).
+- A failed or deferred TV change is retried every 10 s.
+- The original brightness is saved to disk before the movie value is written, so a crash can never lose it.
+- Unexpected errors in the poll thread are logged and polling continues.
 
-## When to split a service
-
-Require evidence for at least one durable need: independent scaling, fault/security isolation, separate data sovereignty, materially different deployment cadence, or stable independent ownership. Record the tradeoff in an ADR, including network failure, observability, deployment, testing, and consistency costs.
-
-Architecture decisions are indexed in [decisions/README.md](decisions/README.md). Proposed cross-cutting designs live in [../design/README.md](../design/README.md).
+Decisions: [ADR-0002](decisions/0002-control-tv-brightness-over-webos-ssap.md) (TV control and stack) and [ADR-0003](decisions/0003-restore-per-picture-mode-with-a-persisted-debt.md) (restore rules).

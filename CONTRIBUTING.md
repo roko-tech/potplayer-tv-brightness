@@ -30,12 +30,14 @@ Draft pull requests are welcome for early design feedback. A pull request is mer
 
 ## Local validation
 
-The template baseline is:
-
 ```shell
-python scripts/verify.py
-python -m unittest discover -s tests -v
+uv sync --locked
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy
+uv run python scripts/verify.py
+uv run python -m unittest discover -s tests -v
 git diff --check
 ```
 
-Projects created from this template must add their stack-specific commands here and in CI.
+CI runs the same commands on Ubuntu and Windows. Live TV checks are described in [docs/testing.md](docs/testing.md).

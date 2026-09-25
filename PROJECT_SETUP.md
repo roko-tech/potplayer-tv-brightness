@@ -1,70 +1,70 @@
 # Project setup checklist
 
-Complete this checklist in the first pull request created from the template. Keep the file afterward as the auditable receipt of setup decisions; `scripts/verify.py` requires it.
+Completed in the initial commits (2026-09-25). Kept as the receipt of setup decisions; `scripts/verify.py` requires it.
 
 ## 1. Define the product
 
-- [ ] Replace the template description in `README.md` with the project name, purpose, users, and quick start.
-- [ ] Complete [docs/product/brief.md](docs/product/brief.md), including measurable outcomes and explicit non-goals.
-- [ ] Name a product owner and technical owner.
+- [x] `README.md` names the project, purpose, user, and quick start.
+- [x] [docs/product/brief.md](docs/product/brief.md) has measurable outcomes and non-goals.
+- [x] Product and technical owner: @rokogan.
 
 ## 2. Choose only the necessary technology
 
-- [ ] Record runtime, framework, database, deployment target, and important constraints.
-- [ ] Capture consequential choices as ADRs; do not create ADRs for reversible local preferences.
-- [ ] Add the minimum application skeleton needed for the first vertical slice.
-- [ ] Update `.gitignore`, `.editorconfig`, and `.env.example` for the selected stack.
-- [ ] Choose and add an appropriate license before external distribution.
+- [x] Runtime: Python 3.12 on Windows; `pystray`, `Pillow`, `websocket-client`. No database, no deployment target: it runs from source on the owner's PC.
+- [x] Consequential choices: [ADR-0002](docs/architecture/decisions/0002-control-tv-brightness-over-webos-ssap.md) (TV control and stack), [ADR-0003](docs/architecture/decisions/0003-restore-per-picture-mode-with-a-persisted-debt.md) (restore rules).
+- [x] Application code for the first vertical slice.
+- [x] `.gitignore` ignores the key, settings, and restore files. `.editorconfig` already fits Python. `.env.example` states that no environment variables are used.
+- [x] License: none on purpose. Private personal tool with no external distribution.
 
 ## 3. Make commands truthful
 
-- [ ] Add reproducible setup, run, test, lint, type-check, build, and package commands.
-- [ ] Replace or extend the commands in `AGENTS.md`, `CONTRIBUTING.md`, and CI.
-- [ ] Pin direct dependencies and commit the ecosystem lockfile.
-- [ ] Configure Dependabot for each package ecosystem actually used.
+- [x] Setup, run, format, lint, type, and test commands are in `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and [docs/testing.md](docs/testing.md). No build or package step: runs from source.
+- [x] CI runs the same commands on Ubuntu and Windows.
+- [x] Exact pins in `pyproject.toml` with `uv.lock` committed.
+- [x] Dependabot for `uv` and `github-actions`.
 
 ## 4. Design the system
 
-- [ ] Replace the generic context and container diagrams in [docs/architecture/overview.md](docs/architecture/overview.md).
-- [ ] Define module boundaries, dependency direction, data ownership, and external integrations.
-- [ ] Identify trust boundaries and complete [docs/security/threat-model.md](docs/security/threat-model.md).
-- [ ] Decide how configuration, secrets, logs, metrics, and errors are handled.
+- [x] Real context, runtime, and module map in [docs/architecture/overview.md](docs/architecture/overview.md).
+- [x] Module boundaries, dependency direction, data ownership, and the TV integration are documented there.
+- [x] [docs/security/threat-model.md](docs/security/threat-model.md) covers the pairing key and the unverified TLS to the TV.
+- [x] Configuration: `settings.json`. Secret: `tv-client-key.txt`. Logs: rotating local file. Errors: tray tooltip and log. Metrics: none (personal tool).
 
 ## 5. Establish quality evidence
 
-- [ ] Add one end-to-end vertical-slice acceptance test for the primary user outcome.
-- [ ] Add fast unit/component tests around business rules and integration tests at real boundaries.
-- [ ] Add platform-specific or live-system checks where hermetic tests cannot prove behavior.
-- [ ] Define test data, coverage expectations, and unacceptable regressions in [docs/testing.md](docs/testing.md).
+- [x] Vertical-slice acceptance test: `test_play_boosts_and_pause_restores` in `tests/test_controller.py`, plus the live run in [docs/testing.md](docs/testing.md).
+- [x] Unit tests for the rules and protocol tests for the TV adapter.
+- [x] Live checks: `scripts/tv_check.py` and the live procedure in [docs/testing.md](docs/testing.md).
+- [x] Test data, coverage expectations, and unacceptable regressions are in [docs/testing.md](docs/testing.md).
 
 ## 6. Prepare operations
 
-- [ ] Define environments, deployment owner, release process, and rollback procedure.
-- [ ] Define service-level indicators/objectives and alert ownership.
-- [ ] Configure backups where state exists and perform a measured restore rehearsal.
-- [ ] Remove example operational language that does not match the real system.
+- [x] One environment (the owner's PC). Update and rollback with Git: [runbook](docs/operations/runbook.md).
+- [x] SLOs and alerting: not applicable, see [slo.md](docs/operations/slo.md).
+- [x] Backups: not applicable, nothing worth backing up; see [backup-restore.md](docs/operations/backup-restore.md).
+- [x] Template operational language replaced.
 
 ## 7. Configure GitHub
 
-- [ ] Replace or confirm `.github/CODEOWNERS` ownership.
-- [ ] Run `python scripts/github_settings.py --apply` to apply the label, merge, Actions, and Dependabot baseline, then set project-specific topics.
-- [ ] Enable branch rules from `.github/rulesets/main.json` or equivalent organization rules.
-- [ ] Require the real CI checks and conversation resolution before merge.
-- [ ] Enable Dependabot alerts/updates and secret scanning or push protection when the plan supports them.
-- [ ] Restrict Actions permissions and environments to least privilege.
-- [ ] Connect optional AI review only after `AGENTS.md` contains project-specific review rules.
+- [x] `.github/CODEOWNERS`: @rokogan.
+- [x] `python scripts/github_settings.py --apply` applied and read back with no drift; topics set.
+- [ ] Branch rules from `.github/rulesets/main.json`: to import after the first CI run.
+- [ ] Required CI checks and conversation resolution: depend on the ruleset.
+- [x] Dependabot alerts and security updates enabled. Secret scanning: to try after the first CI run.
+- [x] Actions: GitHub-owned only, full-SHA pinning required, read-only workflow token.
+- [x] AI review: not connected (optional). Project review rules are in `AGENTS.md`.
 
 ## 8. Protect users and data
 
-- [ ] Define the private security-reporting contact in `SECURITY.md`.
-- [ ] Classify collected data, retention, deletion, export, and audit requirements.
-- [ ] Add authentication/authorization tests if identities or permissions exist.
-- [ ] Confirm that logs, telemetry, prompts, fixtures, and AI tools receive no unapproved sensitive data.
+- [x] `SECURITY.md` names the owner as the private contact.
+- [x] Data classes and retention: [architecture overview](docs/architecture/overview.md#data) and the threat model. No personal data is collected.
+- [x] Authentication/authorization tests: not applicable (no user identities). TV pairing is covered by `tests/test_tv.py`.
+- [x] Logs, fixtures, and prompts contain no pairing key.
 
 ## 9. Prove readiness
 
-- [ ] Run every documented local command from a clean checkout.
-- [ ] Verify CI on the supported operating systems.
-- [ ] Exercise the primary workflow like a real user in the intended runtime.
-- [ ] Record known limitations and untested surfaces honestly.
-- [ ] Review [docs/release-checklist.md](docs/release-checklist.md) before the first release.
+- [ ] Every documented command run from a clean checkout.
+- [ ] CI green on Ubuntu and Windows.
+- [x] Primary workflow exercised on the real LG C2 and PotPlayer (see [docs/testing.md](docs/testing.md)).
+- [x] Known limitations and untested surfaces recorded in the [user guide](docs/user/README.md) and [testing](docs/testing.md).
+- [x] Release checklist: not applicable for now; no release or distribution is planned.

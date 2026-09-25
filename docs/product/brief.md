@@ -1,65 +1,75 @@
 # Product brief
 
-- Status: Draft
-- Product owner: Define during setup
-- Technical owner: Define during setup
-- Last reviewed: 2026-08-20
-
-Complete this brief before choosing architecture. Use evidence and measurable outcomes; avoid describing implementation as the problem.
+- Status: Accepted (v0.1.0)
+- Product owner: @rokogan
+- Technical owner: @rokogan
+- Last reviewed: 2026-09-25
 
 ## Problem
 
-Who experiences the problem, in what context, and what evidence shows it is worth solving?
+The LG C2 doubles as the PC monitor. For desktop use its OLED Pixel Brightness is kept low (20) to protect the panel and eyes. Movies in PotPlayer look dim at that level, so the owner raises it with the remote every time and often forgets to lower it again afterwards.
+
+TVs do not support DDC/CI, so Windows brightness controls cannot change it.
 
 ## Users and stakeholders
 
 | Group | Need | Current workaround | Risk if unmet |
 | --- | --- | --- | --- |
-| Primary user | Define | Define | Define |
-| Operator/maintainer | Define | Define | Define |
+| Owner watching in PotPlayer | Bright picture while watching, low brightness for desktop use | Change OLED Pixel Brightness with the remote, twice per movie | Dim movies, or a desktop left at movie brightness |
+| Maintainer (same person) | Small, understandable code | None | Hard to fix after TV firmware changes |
 
 ## Proposed outcome
 
-Describe the smallest valuable user outcome in plain language.
+The TV switches to the chosen movie brightness shortly after PotPlayer starts playing, and returns to the previous value when playback pauses, stops, is minimized, or PotPlayer closes. No manual steps.
 
 ## Success measures
 
 | Measure | Baseline | Target | Measurement window | Owner |
 | --- | --- | --- | --- | --- |
-| Primary outcome | Define | Define | Define | Define |
-| Quality/reliability guardrail | Define | Define | Define | Define |
-
-Prefer outcomes such as task completion, error reduction, latency, recovery, or retained usage. Output counts alone are not proof of value.
+| Manual brightness changes per movie | 2 | 0 | First two weeks of use | @rokogan |
+| Time from play/pause to TV change | Manual | Under 3 s | Live check per release | @rokogan |
+| Desktop left at movie brightness after a session | Happens | Never, including after a crash or with the TV off | Live and unit tests | @rokogan |
 
 ## Scope
 
 ### In scope
 
-- Define the first end-to-end user journey.
+- Detect PotPlayer playing (not paused, stopped, minimized, hidden, or closed).
+- Set and restore OLED Pixel Brightness on an LG webOS TV over the local network.
+- Tray icon with status, movie brightness presets, and Quit.
 
 ### Non-goals
 
-- State tempting adjacent work that this project will not solve now.
+- Other players, other TV settings (contrast, picture mode), or other TV brands.
+- Changing brightness in HDR or Dolby Vision picture modes.
+- An installer or a packaged executable.
+- Auto-discovery of the TV on the network.
 
 ## Constraints and assumptions
 
-- Legal, privacy, security, accessibility, budget, schedule, platform, integration, and data constraints.
-- Assumptions that could invalidate the solution and how they will be tested.
+- Windows 10/11 and Python 3.12. The TV and PC are on the same trusted home network.
+- "Screen brightness" means OLED Pixel Brightness (the `backlight` setting), not the black-level "Brightness" setting.
+- The TV accepts `ssap://settings/setSystemSettings` for picture settings. Verified on the LG C2 with webOS 25 (firmware 33.x); a future firmware could remove it.
+- PotPlayer answers its window-message API (`WM_USER` + `0x5006`) with its play state.
 
 ## Primary journey and acceptance
 
-Write a concrete scenario:
+> Given the TV is at brightness 20 in picture mode "normal", when the owner plays a video in PotPlayer, then within 3 s the TV is at the movie brightness (80); when they pause, minimize, or close PotPlayer, then within 3 s it is back at 20.
 
-> Given a defined starting state, when the user performs an action, then they observe a measurable result.
+Failure and recovery cases:
 
-List failure and recovery cases, not only the happy path.
+- The TV is off or unreachable: nothing crashes; the change is retried every 10 s.
+- The app crashes or the PC restarts mid-movie: the original value is kept in `restore.json` and restored on the next start.
+- The TV changed picture mode (e.g. an HDR switch): the original is only written back to the mode it came from, once that mode is active again.
 
 ## Risks and unknowns
 
 | Risk or unknown | Likelihood | Impact | Validation or mitigation | Owner |
 | --- | --- | --- | --- | --- |
-| Define | Define | Define | Define | Define |
+| LG firmware blocks the settings write | Low to medium | App stops working | `scripts/tv_check.py` detects it; fallback is the luna notification-alert method (see ADR-0002) | @rokogan |
+| Restore lands on the wrong input | Low | Another input's brightness changes | Documented limitation; restore is limited to the original picture mode | @rokogan |
+| PotPlayer changes its message API | Low | No detection | Live check each PotPlayer upgrade | @rokogan |
 
 ## Delivery slices
 
-Name the smallest vertical slice that proves the architecture and user outcome. Defer capabilities that are not required for that proof.
+1. (Done) Play/pause/minimize/close drives the TV brightness, with a crash-safe restore and a tray preset menu.

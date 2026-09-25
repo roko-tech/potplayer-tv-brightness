@@ -1,60 +1,54 @@
 # Threat model
 
-- Status: Starter baseline; complete during project setup and review after every trust-boundary change.
-- Owner: Security owner or technical owner
-- Last reviewed: 2026-08-20
+- Status: Current (v0.1.0)
+- Owner: @rokogan
+- Last reviewed: 2026-09-25
 
 ## Scope and security objectives
 
-Define the system, environments, data, users, operators, dependencies, and workflows covered. State the properties that must hold, such as:
+A single-user Windows tray app that reads PotPlayer's state and changes one picture setting on an LG TV over the home network. It must:
 
-- users can access only resources they are authorized to access;
-- secrets and sensitive data are never committed, exposed to clients, or written to unsafe logs;
-- untrusted input cannot trigger unintended code, queries, network access, file access, or external side effects;
-- important writes are authenticated, authorized, validated, auditable, and recoverable;
-- dependency or CI compromise cannot silently publish an unreviewed artifact.
+- keep the TV pairing key out of Git, logs, and error messages;
+- only ever write the `backlight` picture setting, with values from 0 to 100;
+- never leave the TV in a worse state than before (the original brightness is always recoverable);
+- talk to nothing except the configured TV.
 
 ## Assets
 
 | Asset | Sensitivity/value | Owner | Storage/transit | Retention/deletion |
 | --- | --- | --- | --- | --- |
-| User data | Define | Define | Define | Define |
-| Credentials/tokens | Critical | Define | Secret manager only | Rotate/revoke |
-| Source/build/release | High | Define | GitHub and artifact store | Define |
-| Service availability/integrity | High | Define | Runtime | Define |
+| TV pairing key (`tv-client-key.txt`) | High: anyone with it on the LAN can control the TV (inputs, apps, settings) | @rokogan | Local file, Git-ignored; sent only to the TV over TLS | Delete the file and re-pair; revoke by factory reset or the TV's device list |
+| Original brightness (`restore.json`) | Low | @rokogan | Local file, Git-ignored | Deleted once restored |
+| Settings and log | Low (TV IP, brightness, status) | @rokogan | Local files, Git-ignored | Log rotates at 256 KB |
+| Source and CI | Medium | @rokogan | Private GitHub repository | Git history |
 
 ## Actors and capabilities
 
-List anonymous users, authenticated roles, administrators, operators, external providers, CI identities, insiders, compromised dependencies, and attackers. For each, define intended permissions and plausible misuse.
+- **Owner:** runs the app and edits settings.
+- **Other devices on the home LAN:** can reach the TV; a compromised one could impersonate it or sniff traffic.
+- **Other local processes:** already run as the owner, so they can read the key file anyway.
+- **Dependencies and CI:** pinned packages and SHA-pinned GitHub-owned Actions.
 
 ## Trust boundaries and data flow
 
-Replace this starter view with real boundaries and label protocols, authentication, and data classes.
-
 ```mermaid
 flowchart LR
-    Untrusted[Untrusted user/input] --> Boundary[Validated interface]
-    Boundary --> App[Application authorization and rules]
-    App --> Data[(Owned sensitive state)]
-    App --> Vendor[External provider]
-    CI[CI identity] --> Artifact[Release artifact]
-    Operator[Privileged operator] --> App
+    PotPlayer[PotPlayer window, same user] -->|play state via window message| App[Tray app]
+    App -->|pairing key + picture requests, TLS without certificate check| TV[LG TV on the LAN]
+    App --> Files[(App folder: key, settings, restore, log)]
 ```
 
 ## Threat register
 
 | Scenario | Preconditions/path | Impact | Existing control | Validation | Residual risk/owner |
 | --- | --- | --- | --- | --- | --- |
-| Identity spoofing/session theft | Define | Unauthorized access | Define | Auth tests | Define |
-| Cross-user/tenant access | Missing object-level authorization | Data disclosure/change | Deny by default | Negative authorization tests | Define |
-| Injection or unsafe parsing | Untrusted input reaches interpreter/query/path | Code/data compromise | Typed parameters and allowlists | Adversarial tests | Define |
-| Server-side request/file access | User controls URL/path | Internal/data access | Scheme/host/path policy | Boundary tests | Define |
-| Secret or private-data leakage | Logs, errors, prompts, artifacts | Confidentiality breach | Redaction/minimization | Log/artifact review | Define |
-| Dependency/CI compromise | Mutable action or excessive token | Source/release compromise | SHA pins and least privilege | Workflow audit | Define |
-| Replay/duplicate side effect | Retry or duplicate delivery | Double charge/write/message | Idempotency keys | Duplicate/restart tests | Define |
-| Resource exhaustion/abuse | Costly unauthenticated operation | Availability/cost | Limits, quotas, backpressure | Load/abuse tests | Define |
-| Destructive admin error | Excess privilege or unsafe operation | Data loss/outage | Approval, dry run, backup | Restore/recovery drill | Define |
+| Key committed or logged | Developer error | TV control by others with repo access | `.gitignore` entries; the key is never logged or printed | `git status --ignored` before commits; code review (the key is only read, sent in the register message, and written to its file) | Low / @rokogan |
+| LAN attacker impersonates the TV | ARP/DNS spoofing on the home LAN; the TV's self-signed certificate cannot be verified | Key captured, then TV control | Home LAN only; TLS still encrypts against passive sniffing | None (accepted) | Accepted: pinning the TV certificate would add complexity for a home network. Revisit if the TV moves to a shared network. / @rokogan |
+| Malicious or malformed TV replies | Spoofed or buggy TV | App error | Replies parsed defensively; only a string mode and an integer brightness are used; errors become `TVError` and are retried | `test_tv.py` malformed and error cases | Low / @rokogan |
+| Wrong setting or value written | Bug, bad settings file | Picture changed unexpectedly | Only `backlight` is written; `movie_brightness` is clamped to 0 to 100; originals are restored per mode | `test_controller.py`, `test_app.py` | Low / @rokogan |
+| Fake PotPlayer window | Local process creates a `PotPlayer64` window | Brightness raised | Same-user process could do worse already | None needed | Negligible / @rokogan |
+| Dependency or CI compromise | Malicious package or action | Code execution on the PC | Exact pins with `uv.lock`, Dependabot, GitHub-owned Actions pinned to SHAs, read-only workflow token | Dependabot PRs go through CI | Low / @rokogan |
 
 ## Review triggers
 
-Update this model when adding identities/roles, sensitive data, external integrations, file/network processing, AI tools, public endpoints, background jobs, payment or messaging side effects, deployment identities, or a new trust boundary. Link security tests and accepted risk to the implementing pull request or ADR.
+Update this model if the app talks to anything besides the TV, writes other TV settings, stores new data, or is shared beyond the owner.

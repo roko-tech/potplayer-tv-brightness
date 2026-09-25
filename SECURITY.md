@@ -6,9 +6,7 @@ Until the project defines a different support policy, only the current default b
 
 ## Report a vulnerability
 
-Do not open a public issue containing vulnerability details, credentials, private data, or an exploit. Report privately through the repository's GitHub private vulnerability reporting channel when enabled, or through the private maintainer contact defined during project setup.
-
-Project owners must replace this sentence with a monitored private contact and expected acknowledgement window before sharing the project outside the initial team.
+Do not open a public issue containing vulnerability details, credentials, private data, or an exploit. This is a private, single-maintainer repository. Report privately to the owner, @rokogan, who aims to acknowledge within a week.
 
 Include the affected version or commit, prerequisites, reproduction steps, impact, and any safe proof of concept. Do not access data that is not yours, disrupt service, persist access, or publish details before maintainers have had a reasonable opportunity to respond.
 

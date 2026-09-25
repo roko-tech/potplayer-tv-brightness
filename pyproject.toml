@@ -1,0 +1,44 @@
+[project]
+name = "potplayer-tv-brightness"
+version = "0.1.0"
+description = "Tray app that raises LG C2 OLED brightness while PotPlayer plays and restores it on pause, minimize, or close"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "pillow==12.3.0",
+  "pystray==0.19.5",
+  "websocket-client==1.9.2",
+]
+
+[dependency-groups]
+dev = [
+  "mypy==2.3.1",
+  "ruff==0.16.9",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+# Template-owned files stay byte-identical to roko-tech/project-starter.
+extend-exclude = [
+  "scripts/github_settings.py",
+  "scripts/verify.py",
+  "tests/test_github_settings.py",
+  "tests/test_verify.py",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+platform = "win32"
+strict = true
+packages = ["potplayer_tv_brightness"]
+
+[[tool.mypy.overrides]]
+module = ["pystray"]
+ignore_missing_imports = true

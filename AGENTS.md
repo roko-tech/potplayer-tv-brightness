@@ -32,15 +32,19 @@ Do not infer behavior from filenames or comments when code, tests, logs, persist
 
 ## Verification
 
-Run the narrowest relevant checks during development and the full affected suite before handoff. The starter's baseline commands are:
+Run the narrowest relevant checks during development and the full affected suite before handoff. The commands (same as CI):
 
 ```shell
-python scripts/verify.py
-python -m unittest discover -s tests -v
+uv sync --locked
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy
+uv run python scripts/verify.py
+uv run python -m unittest discover -s tests -v
 git diff --check
 ```
 
-After the application stack is selected, replace this section with the exact formatter, linter, type checker, unit, integration, end-to-end, build, package, and platform commands. Report commands run, results, and untested surfaces. Do not claim that mocked or hermetic tests prove live integrations, installation, deployment, migration, backup restoration, or user-visible behavior.
+There is no build or package step. Changes to `tv.py` or `potplayer.py` also need the live checks in `docs/testing.md` (they change the real TV's brightness; tell the owner first). `scripts/verify.py`, `scripts/github_settings.py`, and their tests are template-owned: keep them identical to roko-tech/project-starter (ruff skips them). Report commands run, results, and untested surfaces. Do not claim that mocked or hermetic tests prove live integrations, installation, deployment, migration, backup restoration, or user-visible behavior.
 
 ## Safety and authority
 
@@ -51,6 +55,11 @@ After the application stack is selected, replace this section with the exact for
 
 ## Code Review Rules
 
+- The original brightness must be saved to `restore.json` before the movie value is written, and must never be overwritten while it is still owed. Flag any path that can lose it.
+- Restores may only write to the picture mode the original came from. HDR and Dolby Vision modes must stay untouched.
+- TV network calls belong on the poll thread, with bounded timeouts. The tray thread may only wait for it on Quit, and that wait must stay bounded.
+- The pairing key must never reach logs, exceptions, tests, or Git. Only the `backlight` picture setting may be written, clamped to 0 to 100.
+- The TV connection must keep `suppress_origin=True`; webOS closes the socket otherwise.
 - Flag behavior that violates acceptance criteria, public contracts, authorization boundaries, data ownership, migration safety, idempotency, or rollback guarantees. State the concrete failure path and the safer path.
 - Treat missing tests as consequential when they leave a changed business rule, trust boundary, failure mode, or regression unproved. Do not request coverage for its own sake.
 - Flag documentation only when stale guidance could cause incorrect operation, unsafe maintenance, or a wrong user expectation. Leave deterministic formatting and lint checks to CI.

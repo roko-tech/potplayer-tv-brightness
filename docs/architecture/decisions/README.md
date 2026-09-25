@@ -16,3 +16,5 @@ Do not create ADRs for routine implementation details or easily reversible prefe
 | ADR | Status | Decision |
 | --- | --- | --- |
 | [0001](0001-default-to-a-modular-monolith.md) | Accepted | Default to a modular monolith |
+| [0002](0002-control-tv-brightness-over-webos-ssap.md) | Accepted | Control TV brightness over webOS SSAP from a Python tray app |
+| [0003](0003-restore-per-picture-mode-with-a-persisted-debt.md) | Accepted | Restore per picture mode, with the original saved on disk |
