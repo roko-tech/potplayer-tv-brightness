@@ -2,13 +2,13 @@
 
 ## Supported versions
 
-Until the project defines a different support policy, only the current default branch and latest release receive security fixes.
+Only the current default branch receives security fixes. There are no releases yet.
 
 ## Report a vulnerability
 
-Do not open a public issue containing vulnerability details, credentials, private data, or an exploit. This is a private, single-maintainer repository. Report privately to the owner, @rokogan, who aims to acknowledge within a week.
+Do not open a public issue containing vulnerability details, credentials, a TV pairing key, private data, or an exploit. Report privately through GitHub: the repository's **Security** tab, then **Report a vulnerability**. The maintainer, @rokogan, aims to acknowledge within a week.
 
-Include the affected version or commit, prerequisites, reproduction steps, impact, and any safe proof of concept. Do not access data that is not yours, disrupt service, persist access, or publish details before maintainers have had a reasonable opportunity to respond.
+Include the affected commit, prerequisites, reproduction steps, impact, and any safe proof of concept. Do not access data that is not yours, disrupt service, persist access, or publish details before the maintainer has had a reasonable opportunity to respond.
 
 ## Maintainer response
 

@@ -24,6 +24,12 @@ These primary or canonical sources informed the starter. Links were reviewed on 
 - [Google SRE: Implementing SLOs](https://sre.google/workbook/implementing-slos/) — user-centered service indicators, objectives, and error budgets.
 - [DORA metrics](https://dora.dev/guides/dora-metrics/) — delivery and operational performance measures used as improvement signals.
 
+## LG TV integration
+
+- [LG webOS TV user guide (2022 models)](https://kr.eguide.lgappstv.com/manual/w22_mr15/w22_eu05/eng.html) — menu paths for the network settings (the TV's IP address) and external device connections; no LG Connect Apps switch on these models.
+- [Home Assistant: LG webOS TV](https://www.home-assistant.io/integrations/webostv/) — older models need LG Connect Apps turned on under the TV's network settings; SSAP uses TCP ports 3000 and 3001.
+- [lgtv2](https://github.com/hobbyquaker/lgtv2) — source of `pairing.json`, the signed manifest that grants `WRITE_SETTINGS` (MIT).
+
 ## AI-assisted engineering
 
 - [OpenAI: Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md) — layered repository guidance and discovery.

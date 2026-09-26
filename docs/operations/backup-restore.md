@@ -11,6 +11,6 @@ The app keeps no data worth backing up. Everything can be recreated in a minute:
 | `settings.json` | Defaults are recreated on the next start | Pick the movie brightness again in the tray; fix `tv_host` if needed |
 | `tv-client-key.txt` | The TV asks to pair again | Accept the prompt on the TV |
 | `restore.json` | The TV may stay at movie brightness | Set the desktop value with `uv run python -m scripts.tv_check --set N` or the remote |
-| Source code | Private GitHub repository | `git clone` |
+| Source code | GitHub repository | `git clone` |
 
 The TV's own picture settings are the TV's responsibility and are not backed up by this app.

@@ -12,9 +12,12 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 - Project documentation, CI (ruff, mypy, unit tests on Ubuntu and Windows), and Dependabot for uv, based on roko-tech/project-starter.
 - A connection step: `uv run python -m scripts.tv_check --host <TV IP>` pairs with the TV (Accept prompt) and saves the address once the TV answers. The README and user guide explain how to find the TV's address and fix connection problems.
 
+- MIT license. The README credits lgtv2 for the TV pairing manifest.
+
 ### Changed
 
 - No built-in TV address. Starting the app before connecting a TV shows how to connect and exits.
+- Security reports go through GitHub private vulnerability reporting.
 
 ### Fixed
 

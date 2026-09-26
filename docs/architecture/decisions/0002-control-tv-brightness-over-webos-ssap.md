@@ -36,7 +36,7 @@ Software dimming of the signal. It does not change the panel's light output and 
 ## Decision
 
 - **TV:** a minimal SSAP client (`tv.py`) on `websocket-client`. It reuses the widely published signed manifest (copied from the lgtv2 package as `pairing.json`), opens one short connection per operation, and suppresses the `Origin` header, which webOS rejects with "invalid origin".
-- **PotPlayer:** its window-message API. `WM_USER` with `0x5006` returns -1 idle, 1 paused, 2 playing, as validated in `D:\MyScripts\potplayer\potplayer_api.py`. Minimized or hidden windows count as not watching. Chosen over window titles (no state) and Windows media controls (PotPlayer does not report reliably).
+- **PotPlayer:** its window-message API. `WM_USER` with `0x5006` returns -1 idle, 1 paused, 2 playing, as validated against stock PotPlayerMini64. Minimized or hidden windows count as not watching. Chosen over window titles (no state) and Windows media controls (PotPlayer does not report reliably).
 - **App:** Python 3.12 with `pystray` and `Pillow` for the tray icon, managed by uv with exact pins and `uv.lock`.
 
 ## Consequences
