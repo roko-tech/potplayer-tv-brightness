@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 @unittest.skipUnless(sys.platform == "win32", "the app uses Win32 APIs")
@@ -21,7 +22,7 @@ class AppTest(unittest.TestCase):
         settings = self.app.load_settings(self.path)
         self.assertEqual(settings, self.app.Settings())
         saved = json.loads(self.path.read_text(encoding="utf-8"))
-        self.assertEqual(saved, {"tv_host": "192.168.8.145", "movie_brightness": 80})
+        self.assertEqual(saved, {"tv_host": "", "movie_brightness": 80})
 
     def test_brightness_is_clamped(self) -> None:
         self.path.write_text('{"tv_host": "tv", "movie_brightness": 150}', "utf-8")
@@ -32,6 +33,21 @@ class AppTest(unittest.TestCase):
         with self.assertLogs("potplayer_tv_brightness", "WARNING"):
             self.assertEqual(self.app.load_settings(self.path), self.app.Settings())
         self.assertEqual(self.path.read_text(encoding="utf-8"), '{"tv_host": "tv"')
+
+    def test_without_a_tv_address_it_explains_and_exits(self) -> None:
+        with (
+            mock.patch.object(self.app.logging, "basicConfig"),
+            mock.patch.object(self.app, "_already_running", return_value=False),
+            mock.patch.object(
+                self.app, "load_settings", return_value=self.app.Settings()
+            ),
+            mock.patch("ctypes.windll.user32.MessageBoxW") as message_box,
+            mock.patch("pystray.Icon") as tray,
+            self.assertLogs("potplayer_tv_brightness", "WARNING"),
+        ):
+            self.app.main()
+        self.assertIn("tv_check --host", message_box.call_args.args[1])
+        tray.assert_not_called()
 
     def test_tray_icon_image(self) -> None:
         for active in (True, False):

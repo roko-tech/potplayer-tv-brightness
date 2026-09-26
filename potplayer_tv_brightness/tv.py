@@ -54,7 +54,7 @@ class LGTV:
             ws = self._connect(
                 self.url, timeout=self.timeout, sslopt=SSL_OPTIONS, suppress_origin=True
             )
-        except CONNECTION_ERRORS as error:
+        except (*CONNECTION_ERRORS, ValueError) as error:  # ValueError: bad address
             raise TVError(f"Cannot connect to {self.url}: {error}") from error
         try:
             session = Session(ws)

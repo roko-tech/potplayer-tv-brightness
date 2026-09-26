@@ -2,7 +2,7 @@
 
 Uses PotPlayer's window-message API: sending WM_USER with 0x5006 to the main
 window returns the play state (-1 idle, 1 paused, 2 playing), as validated
-against stock PotPlayerMini64 in D:/MyScripts/potplayer/potplayer_api.py.
+against stock PotPlayerMini64.
 """
 
 from __future__ import annotations

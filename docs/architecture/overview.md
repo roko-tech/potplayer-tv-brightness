@@ -2,7 +2,7 @@
 
 - Status: Current (v0.1.0)
 - Owner: @rokogan
-- Last reviewed: 2026-09-25
+- Last reviewed: 2026-09-26
 
 One Python process on the Windows PC: a tray icon plus a polling thread. No server, database, or cloud service.
 
@@ -22,7 +22,10 @@ flowchart LR
 - **Main thread:** the pystray tray icon and menu.
 - **Poll thread:** every 0.5 s asks PotPlayer for its state, then calls `Controller.tick`. All TV network calls happen here, so a slow TV never blocks the menu.
 - A named mutex (`Local\potplayer-tv-brightness`) allows a single instance.
+- Without a TV address in `settings.json`, the app shows how to connect one and exits.
 - **Quit** stops the poll thread, which restores the TV before the process exits.
+
+Setup is a separate command: `scripts/tv_check.py --host <IP>` pairs with the TV (the Accept prompt) and saves the address only after the TV answers. It uses the same `LGTV` adapter.
 
 ## Module map
 
@@ -39,7 +42,7 @@ Dependency direction: `app` → `controller` ← `tv`. The controller defines th
 
 | File | Content | Classification |
 | --- | --- | --- |
-| `settings.json` | TV IP address, movie brightness | Local config |
+| `settings.json` | TV IP address (none until connected), movie brightness | Local config |
 | `tv-client-key.txt` | TV pairing key | Secret (controls the TV) |
 | `restore.json` | `{picture mode: original brightness}` while a restore is owed | Local state |
 | `potplayer-tv-brightness.log` | Status changes and errors | Local, no secrets |
@@ -48,7 +51,7 @@ All are ignored by Git. Nothing else is stored or sent anywhere.
 
 ## Reliability
 
-- TV calls use a fresh connection per operation with a 3 s timeout (60 s while an Accept prompt is on screen). A TV that is off or rebooting needs no reconnect logic.
+- TV calls use a fresh connection per operation with a 3 s timeout (60 s while an Accept prompt is on screen). A TV that is off or rebooting needs no reconnect logic. A malformed address is reported like an unreachable TV.
 - A PotPlayer state must hold for 1 s before the app acts (no flicker between playlist items).
 - A failed or deferred TV change is retried every 10 s.
 - The original brightness is saved to disk before the movie value is written, so a crash can never lose it.

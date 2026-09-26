@@ -3,7 +3,7 @@
 - Status: Accepted (v0.1.0)
 - Product owner: @rokogan
 - Technical owner: @rokogan
-- Last reviewed: 2026-09-25
+- Last reviewed: 2026-09-26
 
 ## Problem
 
@@ -17,6 +17,7 @@ TVs do not support DDC/CI, so Windows brightness controls cannot change it.
 | --- | --- | --- | --- |
 | Owner watching in PotPlayer | Bright picture while watching, low brightness for desktop use | Change OLED Pixel Brightness with the remote, twice per movie | Dim movies, or a desktop left at movie brightness |
 | Maintainer (same person) | Small, understandable code | None | Hard to fix after TV firmware changes |
+| Someone else with PotPlayer and an LG webOS TV | Connect their own TV without reading the code | None: the app assumed the owner's TV address | Cannot get started |
 
 ## Proposed outcome
 
@@ -62,6 +63,10 @@ Failure and recovery cases:
 - The app crashes or the PC restarts mid-movie: the original value is kept in `restore.json` and restored on the next start.
 - The TV changed picture mode (e.g. an HDR switch): the original is only written back to the mode it came from, once that mode is active again.
 
+First-time setup:
+
+> Given an LG webOS TV that is on and on the same network, when a new user runs `tv_check --host <TV IP>` and accepts the prompt on the TV, then the command prints the TV's picture mode and brightness, and the app starts with that TV. A declined prompt, an unreachable TV, or a malformed address saves nothing and prints a clear error. Starting the app before connecting explains how to connect.
+
 ## Risks and unknowns
 
 | Risk or unknown | Likelihood | Impact | Validation or mitigation | Owner |
@@ -73,3 +78,4 @@ Failure and recovery cases:
 ## Delivery slices
 
 1. (Done) Play/pause/minimize/close drives the TV brightness, with a crash-safe restore and a tray preset menu.
+2. (Done) First-time setup: connect a TV with one command and the Accept prompt; no built-in TV address.

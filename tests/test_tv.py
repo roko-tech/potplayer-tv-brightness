@@ -147,6 +147,11 @@ class LGTVTest(unittest.TestCase):
             pass
         self.assertTrue(ws.closed)
 
+    def test_malformed_address_raises(self) -> None:
+        tv = LGTV("192.168.1.50:3001", self.key_file)  # fails before any network
+        with self.assertRaises(TVError), tv.session():
+            pass
+
     def test_unreachable_tv_raises(self) -> None:
         def refuse(url: str, **kwargs: Any) -> FakeWebSocket:
             raise ConnectionRefusedError("refused")

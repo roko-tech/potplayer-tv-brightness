@@ -27,6 +27,13 @@ LOG_FILE = ROOT / "potplayer-tv-brightness.log"
 PRESETS = (30, 40, 50, 60, 70, 80, 90, 100)
 POLL_S = 0.5
 ERROR_ALREADY_EXISTS = 183
+MB_ICONWARNING = 0x30
+NO_TV_MESSAGE = (
+    "No TV address in settings.json.\n\n"
+    "Connect your TV once from the app folder:\n"
+    "uv run python -m scripts.tv_check --host <TV IP address>\n\n"
+    'Then start the app again. See "Connect your TV" in README.md.'
+)
 
 log = logging.getLogger("potplayer_tv_brightness")
 _instance_mutex: Any = None  # single-instance handle, held until exit
@@ -34,7 +41,7 @@ _instance_mutex: Any = None  # single-instance handle, held until exit
 
 @dataclass
 class Settings:
-    tv_host: str = "192.168.8.145"
+    tv_host: str = ""  # set by scripts.tv_check --host
     movie_brightness: int = 80
 
 
@@ -91,10 +98,16 @@ def main() -> None:
     if _already_running():
         log.info("Already running; exiting")
         return
+    settings = load_settings()
+    if not settings.tv_host:
+        log.warning("No TV address in %s; exiting", SETTINGS_FILE.name)
+        ctypes.windll.user32.MessageBoxW(
+            None, NO_TV_MESSAGE, "PotPlayer TV Brightness", MB_ICONWARNING
+        )
+        return
 
     import pystray  # Windows tray backend; imported here to keep tests headless
 
-    settings = load_settings()
     controller = Controller(
         LGTV(settings.tv_host, KEY_FILE),
         RestoreStore(RESTORE_FILE),
