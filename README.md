@@ -7,7 +7,7 @@ Tested on an LG C2 (webOS 25) with PotPlayer 64-bit. Other LG webOS TVs may work
 ## Requirements
 
 - Windows 10 or 11, Python 3.12, [uv](https://docs.astral.sh/uv/), and PotPlayer.
-- An LG webOS TV on the same home network as the PC.
+- An LG webOS TV on the same home network as the PC. No Developer Mode, rooting, or LG account is needed.
 
 ## Install
 

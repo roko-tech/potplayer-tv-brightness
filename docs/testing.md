@@ -84,7 +84,7 @@ Last run of steps 2 to 4: 2026-09-25, LG C2 webOS 25 (firmware 33.x), PotPlayer 
 
 Last run of step 1: 2026-09-26, same TV, from a scratch copy so the real key and settings stayed untouched. No address: the command explained `--host`. An address with a port (`<TV IP>:3001`): a clear "Cannot connect" error. Decline: `Pairing refused: 403 Error: User rejected pairing`, nothing saved. Accept: address and key saved, `normal` at 20 printed; a second run reused both without a prompt; `--set 20` read back 20. The tray app started without an address showed the "No TV address" dialog, logged a warning, and exited.
 
-Not live-tested yet: tray menu clicks (presets, Quit), HDR mode switching, and a switched-off TV. These are covered by unit tests only.
+Not live-tested yet: tray menu clicks (presets, Quit), HDR mode switching, and a switched-off TV, which are covered by unit tests only; and a TV without Developer Mode (the test TV has it on for other apps, and turning it off would uninstall them).
 
 ## Evidence in pull requests
 

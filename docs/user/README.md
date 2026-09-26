@@ -12,7 +12,7 @@ uv sync
 
 ## Connect your TV
 
-Do this once. The TV must be on, and on the same home network as the PC (not a guest network).
+Do this once. The TV must be on, and on the same home network as the PC (not a guest network). No Developer Mode, rooting, or LG account is needed: the app pairs the way LG's own phone remote app does.
 
 1. Find the TV's IP address. On the TV, open **Settings > General > Network** and select the connection in use: **Wired Connection (Ethernet)**, or **Wi-Fi Connection > Other Network Settings > Advanced Wi-Fi Settings**. Menu names vary by model year. Your router's list of connected devices shows it too.
 2. From the app folder, run this with your TV's address:
@@ -90,6 +90,7 @@ All files live in the app folder and are not committed to Git.
 | `TV check failed: Cannot connect to wss://...` | The TV is off, the address is wrong, or the PC and TV are on different networks (guest Wi-Fi, VPN). Use just the address, like `192.168.1.50`, without `http://` or a port. |
 | `Pairing refused: 403 Error: User rejected pairing` | **Decline** was selected on the TV. Run the command again and select **Accept**. |
 | Times out while the prompt is showing | The prompt was not accepted within 60 seconds. Run the command again. |
+| `blacklisted certificate` when connecting, or `401 insufficient permissions` on `--set` | The TV's firmware blocks the LG pairing certificate or the brightness write this app uses. The app cannot work on it yet (see Known limitations). |
 | "No TV address in settings.json" when starting the app | [Connect your TV](#connect-your-tv) first. |
 | Tooltip says "TV unreachable" | The TV is off or its address changed. Run `uv run python -m scripts.tv_check`; if the address changed, connect again with `--host` and restart the app. |
 | Nothing happens when playing | Is PotPlayer minimized or paused? Check the log for errors. |
@@ -103,5 +104,6 @@ The app only talks to your TV on the local network. It sends nothing else anywhe
 ## Known limitations
 
 - Windows only. Tested with an LG C2 on webOS 25 and PotPlayer 64-bit. On another LG TV, `uv run python -m scripts.tv_check --set N` (N = its current value) shows quickly whether it accepts the brightness change.
+- Some newer LG firmware blocks the method this app uses (reported on a 2026 C6 with firmware 43.21.60). A firmware update could do the same to older models.
 - Brightness settings belong to the TV's current input. If you switch the TV to another input or app while a movie is still playing and the movie then ends, the restore writes to that input's picture mode (if the mode name matches).
 - A picture mode change in the middle of a movie is not boosted until the next play.

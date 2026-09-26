@@ -51,6 +51,7 @@ The TV switches to the chosen movie brightness shortly after PotPlayer starts pl
 - Windows 10/11 and Python 3.12. The TV and PC are on the same trusted home network.
 - "Screen brightness" means OLED Pixel Brightness (the `backlight` setting), not the black-level "Brightness" setting.
 - The TV accepts `ssap://settings/setSystemSettings` for picture settings. Verified on the LG C2 with webOS 25 (firmware 33.x); a future firmware could remove it.
+- No Developer Mode: `WRITE_SETTINGS` comes from LG's signed manifest sent at pairing. The test TV has Developer Mode on for other apps, so this rests on external evidence ([references](../references.md#lg-tv-integration)).
 - PotPlayer answers its window-message API (`WM_USER` + `0x5006`) with its play state.
 
 ## Primary journey and acceptance
@@ -71,7 +72,7 @@ First-time setup:
 
 | Risk or unknown | Likelihood | Impact | Validation or mitigation | Owner |
 | --- | --- | --- | --- | --- |
-| LG firmware blocks the settings write | Low to medium | App stops working | `scripts/tv_check.py` detects it; fallback is the luna notification-alert method (see ADR-0002) | @rokogan |
+| LG firmware blocks the pairing certificate or the settings write | Medium: reported on 2026 firmware (C6, 43.21.60) | App cannot connect or change brightness | `scripts/tv_check.py` detects it; fallback is the luna notification-alert method (see ADR-0002) | @rokogan |
 | Restore lands on the wrong input | Low | Another input's brightness changes | Documented limitation; restore is limited to the original picture mode | @rokogan |
 | PotPlayer changes its message API | Low | No detection | Live check each PotPlayer upgrade | @rokogan |
 

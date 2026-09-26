@@ -29,6 +29,9 @@ These primary or canonical sources informed the starter. Links were reviewed on 
 - [LG webOS TV user guide (2022 models)](https://kr.eguide.lgappstv.com/manual/w22_mr15/w22_eu05/eng.html) — menu paths for the network settings (the TV's IP address) and external device connections; no LG Connect Apps switch on these models.
 - [Home Assistant: LG webOS TV](https://www.home-assistant.io/integrations/webostv/) — older models need LG Connect Apps turned on under the TV's network settings; SSAP uses TCP ports 3000 and 3001.
 - [lgtv2](https://github.com/hobbyquaker/lgtv2) — source of `pairing.json`, the signed manifest that grants `WRITE_SETTINGS` (MIT).
+- [aiowebostv issue #728](https://github.com/home-assistant-libs/aiowebostv/issues/728) — `WRITE_SETTINGS` is granted per connection by the signed manifest sent at pairing, not by the client key; some firmware now rejects that certificate as blacklisted.
+- [lg_webos_brightness_adjustment](https://github.com/zedr32/lg_webos_brightness_adjustment) — on a C6 with firmware 43.21.60 the direct brightness write returns 401; it switches to the luna notification-alert method (ADR-0002's fallback).
+- [LG Developer Mode app](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app) — Developer Mode is for installing and testing apps under development and needs an LG developer account; turning it off uninstalls those apps. This app uses none of it.
 
 ## AI-assisted engineering
 
