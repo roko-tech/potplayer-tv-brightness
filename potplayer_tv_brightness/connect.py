@@ -25,7 +25,6 @@ from .discovery import FoundTV, find_tvs
 from .tv import LGTV
 
 TITLE = "PotPlayer TV Brightness"
-WRAP = 380  # status text width in pixels
 
 log = logging.getLogger(__name__)
 
@@ -77,11 +76,10 @@ class ConnectWindow:
             frame, text="Connect your LG TV", font=("Segoe UI", 12, "bold")
         )
         title.grid(sticky="w")
-        ttk.Label(
-            frame,
-            text="Turn the TV on. It must be on the same network as this PC.",
-            wraplength=WRAP,
-        ).grid(sticky="w", pady=(4, 10))
+        intro = ttk.Label(
+            frame, text="Turn the TV on. It must be on the same network as this PC."
+        )
+        intro.grid(sticky="w", pady=(4, 10))
         self.tv_list = tk.Listbox(frame, height=4, activestyle="none")
         self.tv_list.grid(sticky="we")
         self.tv_list.bind("<<ListboxSelect>>", lambda _: self._pick())
@@ -93,7 +91,7 @@ class ConnectWindow:
         self.search_button = ttk.Button(row, text="Search again", command=self._search)
         self.search_button.pack(side="right")
         self.status = tk.StringVar()
-        status = ttk.Label(frame, textvariable=self.status, wraplength=WRAP)
+        status = ttk.Label(frame, textvariable=self.status)
         status.grid(sticky="w", pady=(12, 0))
         buttons = ttk.Frame(frame)
         buttons.grid(sticky="e", pady=(12, 0))
@@ -105,6 +103,9 @@ class ConnectWindow:
         self.address.trace_add("write", lambda *_: self._update_connect())
         self._update_connect()
 
+        root.update_idletasks()  # wrap text to the address row; it scales with DPI
+        for label in (intro, status):
+            label.configure(wraplength=row.winfo_reqwidth())
         root.update_idletasks()  # center it, and bring it to the front
         x = (root.winfo_screenwidth() - root.winfo_reqwidth()) // 2
         y = (root.winfo_screenheight() - root.winfo_reqheight()) // 3
