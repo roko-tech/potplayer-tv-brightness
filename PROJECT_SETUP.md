@@ -48,31 +48,25 @@ Completed in the initial commits (2026-09-25) and updated for public release (20
 
 - [x] `.github/CODEOWNERS`: @rokogan.
 - [x] `python scripts/github_settings.py --apply` applied and read back with no drift; topics set.
-- [ ] Branch rules from `.github/rulesets/main.json`: **not imported.** The workspace rule is to import after the first successful CI run, and no CI job has been able to start (see section 9). Requiring checks that cannot run would also block every merge. Import it with the command in [docs/github-governance.md](docs/github-governance.md) once CI runs; GitHub Free may still reject rulesets on private repositories. Until then `main` is not protected.
-- [ ] Required CI checks and conversation resolution: blocked with the ruleset.
-- [x] Dependabot alerts and security updates enabled. Secret scanning and push protection: GitHub refused on 2026-09-25 with HTTP 422 "Secret scanning is not available for this repository." (GitHub Free, private repository). Not upgraded; both are free once the repository is public (see below).
+- [x] Branch rules from `.github/rulesets/main.json` imported on 2026-09-27, right after the first green CI run (ruleset "Protect main"): no deletion or force push, linear history, and pull requests with squash merge only.
+- [x] Required CI checks (`validate / ubuntu-latest`, `validate / windows-latest`, on an up-to-date branch) and conversation resolution: enforced by that ruleset. No approvals are required, so the single maintainer can merge.
+- [x] Dependabot alerts and security updates enabled. Secret scanning and push protection enabled on 2026-09-27, when the repository went public; the first scan of the full history found nothing. (While private on GitHub Free, GitHub refused both with HTTP 422.)
 - [x] Actions: GitHub-owned only, full-SHA pinning required, read-only workflow token.
 - [x] Immutable releases enabled (2026-09-27): published tags and files cannot change, and each release gets a GitHub-signed attestation.
 - [x] Repository recreated on 2026-09-27, so its history and activity log hold no trace of the commits made before the identity rewrite. The previous repository was renamed and kept private for the owner to delete.
 - [x] AI review: not connected (optional). Project review rules are in `AGENTS.md`.
 
-### When the repository goes public
+### Public since 2026-09-27
 
-The repository is ready for public release but stays private until the owner switches it. Then:
+The owner made the repository public on 2026-09-27, after v0.1.0 was published. Done that day, in order: visibility public; secret scanning and push protection; private vulnerability reporting, which `SECURITY.md` relies on; CI re-run on `main` (green on Ubuntu and Windows); the ruleset import. Anonymous downloads of the release match its SHA-256.
 
-1. `gh repo edit roko-tech/potplayer-tv-brightness --visibility public --accept-visibility-change-consequences`
-2. Secret scanning and push protection: `gh api --method PATCH repos/roko-tech/potplayer-tv-brightness -f "security_and_analysis[secret_scanning][status]=enabled" -f "security_and_analysis[secret_scanning_push_protection][status]=enabled"`
-3. Private vulnerability reporting, which `SECURITY.md` relies on: `gh api --method PUT repos/roko-tech/potplayer-tv-brightness/private-vulnerability-reporting`
-4. Re-run CI on `main`: find the latest run ID with `gh run list --repo roko-tech/potplayer-tv-brightness --workflow ci.yml --limit 1`, then `gh run rerun <run ID> --repo roko-tech/potplayer-tv-brightness`. Hosted runners are free for public repositories, so the billing block may no longer apply.
-5. After a green run, import the ruleset with the command in [docs/github-governance.md](docs/github-governance.md).
-6. `python scripts/github_settings.py` then reports `private` as drift. That is expected: the template-owned script assumes private repositories.
-7. Once CI runs: build releases in CI with artifact attestations, and apply to SignPath Foundation for free code signing (both need a public repository; see [references](docs/references.md#releasing-a-windows-exe)).
+`python scripts/github_settings.py` now reports `private` as drift. That is expected: the template-owned script assumes private repositories.
 
-Releases follow "Release the exe" in the [runbook](docs/operations/runbook.md#release-the-exe). A release published while the repository is private is visible only to its collaborators until it goes public.
+Still open: build releases in CI with artifact attestations, and apply to SignPath Foundation for free code signing (see [references](docs/references.md#releasing-a-windows-exe)). Releases follow "Release the exe" in the [runbook](docs/operations/runbook.md#release-the-exe).
 
 ## 8. Protect users and data
 
-- [x] `SECURITY.md` routes reports to GitHub private vulnerability reporting (enabled when the repository goes public).
+- [x] `SECURITY.md` routes reports to GitHub private vulnerability reporting (enabled 2026-09-27).
 - [x] Data classes and retention: [architecture overview](docs/architecture/overview.md#data) and the threat model. No personal data is collected.
 - [x] Authentication/authorization tests: not applicable (no user identities). TV pairing is covered by `tests/test_tv.py`.
 - [x] Logs, fixtures, and prompts contain no pairing key. Tracked files contain no TV address or local paths, and commits use the GitHub noreply identity.
@@ -80,7 +74,7 @@ Releases follow "Release the exe" in the [runbook](docs/operations/runbook.md#re
 ## 9. Prove readiness
 
 - [x] Every documented command run from a clean clone on Windows (2026-09-26): all pass.
-- [ ] CI green on Ubuntu and Windows: **blocked by GitHub billing.** Every job for every roko-tech repository fails before its first step with: "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings" (organization plan: free; seen 2026-09-25). The same commands pass locally on Windows. Ubuntu is unverified; the tests that run there are pure Python.
+- [x] CI green on Ubuntu and Windows, first on 2026-09-27 for the v0.1.0 commit, once the repository was public: hosted runners are free for public repositories. While private, every job failed before its first step because of the organization's billing ("recent account payments have failed or your spending limit needs to be increased"), which still affects private roko-tech repositories.
 - [x] Primary workflow exercised on the real LG C2 and PotPlayer (see [docs/testing.md](docs/testing.md)), from source and as the exe (2026-09-27).
 - [x] Known limitations and untested surfaces recorded in the [user guide](docs/user/README.md) and [testing](docs/testing.md).
 - [x] Distribution: the exe as an immutable GitHub release with `THIRD-PARTY-NOTICES.txt` and `SHA256SUMS.txt`, built and published with the runbook's release steps; source through this repository.
