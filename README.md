@@ -16,6 +16,8 @@ Windows may show "Windows protected your PC", because the app is not signed. Cli
 2. Start the exe. The **Connect your LG TV** window finds your TV. Click **Connect**.
 3. On the TV, select **Accept** with the remote.
 
+<img src="docs/images/connect-window.png" width="360" alt="The Connect your LG TV window: a TV found on the network is selected, its IP address is filled in, and the Connect button is ready.">
+
 A sun icon appears in the tray (it may be under the **^** arrow). No Developer Mode, rooting, or LG account is needed.
 
 ## Use
@@ -26,6 +28,8 @@ Right-click the sun icon:
 - **Connect TV…**: connect again, for example after the TV's address changed.
 - **Start with Windows**: start the app when you sign in.
 - **Quit**: puts the original brightness back and exits.
+
+<img src="docs/images/tray-menu.png" width="360" alt="The tray menu opened from the sun icon: Movie brightness with presets from 30 to 100 (80 selected), Connect TV, Start with Windows (checked), and Quit.">
 
 The icon turns amber while the movie brightness is on. Hover it to see the status. More in the [user guide](docs/user/README.md).
 
