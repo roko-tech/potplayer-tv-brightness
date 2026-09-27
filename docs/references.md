@@ -33,6 +33,10 @@ These primary or canonical sources informed the starter. Links were reviewed on 
 - [lg_webos_brightness_adjustment](https://github.com/zedr32/lg_webos_brightness_adjustment) — on a C6 with firmware 43.21.60 the direct brightness write returns 401; it switches to the luna notification-alert method (ADR-0002's fallback).
 - [LG Developer Mode app](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app) — Developer Mode is for installing and testing apps under development and needs an LG developer account; turning it off uninstalls those apps. This app uses none of it.
 
+## Packaging
+
+- [PyInstaller manual](https://pyinstaller.org/en/stable/) — one-file builds, spec files, and the license exception that allows bundling apps under any license.
+
 ## AI-assisted engineering
 
 - [OpenAI: Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md) — layered repository guidance and discovery.

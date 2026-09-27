@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 import tempfile
@@ -34,20 +35,74 @@ class AppTest(unittest.TestCase):
             self.assertEqual(self.app.load_settings(self.path), self.app.Settings())
         self.assertEqual(self.path.read_text(encoding="utf-8"), '{"tv_host": "tv"')
 
-    def test_without_a_tv_address_it_explains_and_exits(self) -> None:
+    def start(self, dialog_result: str | None) -> tuple[mock.MagicMock, ...]:
+        """Run main() as a first run; the connect window returns dialog_result.
+
+        Every window and real file is patched out: this must never show UI or
+        touch the developer's own settings.
+        """
         with (
             mock.patch.object(self.app.logging, "basicConfig"),
+            mock.patch.object(self.app, "RotatingFileHandler"),
             mock.patch.object(self.app, "_already_running", return_value=False),
             mock.patch.object(
                 self.app, "load_settings", return_value=self.app.Settings()
             ),
-            mock.patch("ctypes.windll.user32.MessageBoxW") as message_box,
+            mock.patch.object(self.app, "save_settings") as save,
+            mock.patch.object(self.app, "RESTORE_FILE", self.path.parent / "r.json"),
+            mock.patch.object(
+                self.app.connect, "connect_dialog", return_value=dialog_result
+            ) as dialog,
             mock.patch("pystray.Icon") as tray,
-            self.assertLogs("potplayer_tv_brightness", "WARNING"),
         ):
             self.app.main()
-        self.assertIn("tv_check --host", message_box.call_args.args[1])
+        return dialog, save, tray
+
+    def test_first_run_shows_the_connect_window_then_the_tray(self) -> None:
+        dialog, save, tray = self.start("192.168.1.50")
+        dialog.assert_called_once()
+        self.assertEqual(save.call_args.args[0].tv_host, "192.168.1.50")
+        tray.assert_called_once()
+
+    def test_closing_the_connect_window_exits_quietly(self) -> None:
+        _, save, tray = self.start(None)
+        save.assert_not_called()
         tray.assert_not_called()
+
+    def test_start_with_windows_toggles_the_run_entry(self) -> None:
+        import winreg
+
+        parent = r"Software\potplayer-tv-brightness-tests"
+        test_key = parent + r"\Run"
+
+        def remove_test_keys() -> None:
+            for key in (test_key, parent):
+                with contextlib.suppress(FileNotFoundError):
+                    winreg.DeleteKey(winreg.HKEY_CURRENT_USER, key)
+
+        self.addCleanup(remove_test_keys)
+        with mock.patch.object(self.app, "RUN_KEY", test_key):
+            self.assertFalse(self.app.autostart_enabled())
+            self.app.set_autostart(True)
+            self.assertTrue(self.app.autostart_enabled())
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, test_key) as key:
+                command = winreg.QueryValueEx(key, self.app.APP_NAME)[0]
+            self.assertTrue(command.endswith('run.pyw"'), command)  # from source
+            self.app.set_autostart(False)
+            self.assertFalse(self.app.autostart_enabled())
+            self.app.set_autostart(False)  # already off: no error
+
+    def test_the_exe_keeps_its_files_in_appdata(self) -> None:
+        appdata = r"C:\Users\u\AppData\Roaming"
+        with (
+            mock.patch.object(sys, "frozen", True, create=True),
+            mock.patch.object(sys, "executable", r"C:\Apps\PotPlayer TV.exe"),
+            mock.patch.dict("os.environ", {"APPDATA": appdata}),
+        ):
+            folder = self.app.data_dir()
+            command = self.app.launch_command()
+        self.assertEqual(folder, Path(appdata) / "PotPlayer TV Brightness")
+        self.assertEqual(command, r'"C:\Apps\PotPlayer TV.exe"')
 
     def test_tray_icon_image(self) -> None:
         for active in (True, False):

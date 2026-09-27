@@ -10,15 +10,15 @@ Completed in the initial commits (2026-09-25) and updated for public release (20
 
 ## 2. Choose only the necessary technology
 
-- [x] Runtime: Python 3.12 on Windows; `pystray`, `Pillow`, `websocket-client`. No database, no deployment target: it runs from source on each user's PC.
-- [x] Consequential choices: [ADR-0002](docs/architecture/decisions/0002-control-tv-brightness-over-webos-ssap.md) (TV control and stack), [ADR-0003](docs/architecture/decisions/0003-restore-per-picture-mode-with-a-persisted-debt.md) (restore rules).
+- [x] Runtime: Python 3.12 on Windows; `pystray`, `Pillow`, `websocket-client`, and Tk from the standard library. No database or server: it runs on each user's PC, as a single-file exe built with PyInstaller (`build` dependency group) or from source.
+- [x] Consequential choices: [ADR-0002](docs/architecture/decisions/0002-control-tv-brightness-over-webos-ssap.md) (TV control and stack), [ADR-0003](docs/architecture/decisions/0003-restore-per-picture-mode-with-a-persisted-debt.md) (restore rules), [ADR-0004](docs/architecture/decisions/0004-ship-a-single-file-exe-with-a-connect-window.md) (exe and Connect window).
 - [x] Application code for the first vertical slice.
 - [x] `.gitignore` ignores the key, settings, and restore files. `.editorconfig` already fits Python. `.env.example` states that no environment variables are used.
 - [x] License: MIT, chosen by the owner on 2026-09-26 for public release. `pairing.json` comes from lgtv2 (MIT) and is credited in the README.
 
 ## 3. Make commands truthful
 
-- [x] Setup, run, format, lint, type, and test commands are in `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and [docs/testing.md](docs/testing.md). No build or package step: runs from source.
+- [x] Setup, run, format, lint, type, and test commands are in `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and [docs/testing.md](docs/testing.md). The exe build command is in `README.md`, `AGENTS.md`, and [docs/testing.md](docs/testing.md); it runs on Windows, outside CI.
 - [x] CI runs the same commands on Ubuntu and Windows.
 - [x] Exact pins in `pyproject.toml` with `uv.lock` committed.
 - [x] Dependabot for `uv` and `github-actions`.
@@ -34,7 +34,7 @@ Completed in the initial commits (2026-09-25) and updated for public release (20
 
 - [x] Vertical-slice acceptance test: `test_play_boosts_and_pause_restores` in `tests/test_controller.py`, plus the live run in [docs/testing.md](docs/testing.md).
 - [x] Unit tests for the rules and protocol tests for the TV adapter.
-- [x] Live checks: `scripts/tv_check.py` and the live procedure in [docs/testing.md](docs/testing.md).
+- [x] Live checks: `scripts/tv_check.py` and the live procedure in [docs/testing.md](docs/testing.md), including the exe's first run.
 - [x] Test data, coverage expectations, and unacceptable regressions are in [docs/testing.md](docs/testing.md).
 
 ## 6. Prepare operations
@@ -64,6 +64,7 @@ The repository is ready for public release but stays private until the owner swi
 4. Re-run CI on `main`: find the latest run ID with `gh run list --repo roko-tech/potplayer-tv-brightness --workflow ci.yml --limit 1`, then `gh run rerun <run ID> --repo roko-tech/potplayer-tv-brightness`. Hosted runners are free for public repositories, so the billing block may no longer apply.
 5. After a green run, import the ruleset with the command in [docs/github-governance.md](docs/github-governance.md).
 6. `python scripts/github_settings.py` then reports `private` as drift. That is expected: the template-owned script assumes private repositories.
+7. Publish the first release with the exe and its SHA-256, following "Release the exe" in the [runbook](docs/operations/runbook.md). The README's download link points there.
 
 ## 8. Protect users and data
 
@@ -76,6 +77,6 @@ The repository is ready for public release but stays private until the owner swi
 
 - [x] Every documented command run from a clean clone on Windows (2026-09-26): all pass.
 - [ ] CI green on Ubuntu and Windows: **blocked by GitHub billing.** Every job for every roko-tech repository fails before its first step with: "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings" (organization plan: free; seen 2026-09-25). The same commands pass locally on Windows. Ubuntu is unverified; the tests that run there are pure Python.
-- [x] Primary workflow exercised on the real LG C2 and PotPlayer (see [docs/testing.md](docs/testing.md)).
+- [x] Primary workflow exercised on the real LG C2 and PotPlayer (see [docs/testing.md](docs/testing.md)), from source and as the exe (2026-09-27).
 - [x] Known limitations and untested surfaces recorded in the [user guide](docs/user/README.md) and [testing](docs/testing.md).
-- [x] Distribution: from source through this repository. No packaged release is planned, so the release checklist does not apply yet.
+- [x] Distribution: the exe as a GitHub release asset, built and published by the owner with the runbook's release steps; source through this repository. No release is published yet.

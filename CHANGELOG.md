@@ -11,12 +11,15 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 - Tray presets from 30 to 100, a status tooltip, and `scripts/tv_check.py` for live TV checks.
 - Project documentation, CI (ruff, mypy, unit tests on Ubuntu and Windows), and Dependabot for uv, based on roko-tech/project-starter.
 - A connection step: `uv run python -m scripts.tv_check --host <TV IP>` pairs with the TV (Accept prompt) and saves the address once the TV answers. The README and user guide explain how to find the TV's address and fix connection problems.
-
+- A single-file Windows exe, `PotPlayer TV Brightness.exe`, built with PyInstaller: no Python needed.
+- A Connect window on first start that finds LG TVs on the network and pairs with one click; typing the IP address still works.
+- Tray menu items **Connect TV…** and **Start with Windows**.
 - MIT license. The README credits lgtv2 for the TV pairing manifest.
 
 ### Changed
 
-- No built-in TV address. Starting the app before connecting a TV shows how to connect and exits.
+- No built-in TV address. Starting the app without one opens the Connect window.
+- The exe keeps its files in `%APPDATA%\PotPlayer TV Brightness`; running from source keeps them in the repository folder.
 - Security reports go through GitHub private vulnerability reporting.
 
 ### Fixed

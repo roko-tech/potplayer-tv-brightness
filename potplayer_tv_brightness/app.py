@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import json
 import logging
 import math
+import os
+import sys
 import threading
 import time
+import winreg
 from dataclasses import asdict, dataclass
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -15,25 +19,29 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
-from . import potplayer
+from . import connect, potplayer
 from .controller import Controller, RestoreStore
 from .tv import LGTV
 
-ROOT = Path(__file__).resolve().parent.parent
-SETTINGS_FILE = ROOT / "settings.json"
-KEY_FILE = ROOT / "tv-client-key.txt"
-RESTORE_FILE = ROOT / "restore.json"
-LOG_FILE = ROOT / "potplayer-tv-brightness.log"
+APP_NAME = "PotPlayer TV Brightness"
+
+
+def data_dir() -> Path:
+    """The exe keeps its files per user; from source they stay in the repo."""
+    if getattr(sys, "frozen", False):
+        return Path(os.environ["APPDATA"]) / APP_NAME
+    return Path(__file__).resolve().parent.parent
+
+
+DATA_DIR = data_dir()
+SETTINGS_FILE = DATA_DIR / "settings.json"
+KEY_FILE = DATA_DIR / "tv-client-key.txt"
+RESTORE_FILE = DATA_DIR / "restore.json"
+LOG_FILE = DATA_DIR / "potplayer-tv-brightness.log"
+RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 PRESETS = (30, 40, 50, 60, 70, 80, 90, 100)
 POLL_S = 0.5
 ERROR_ALREADY_EXISTS = 183
-MB_ICONWARNING = 0x30
-NO_TV_MESSAGE = (
-    "No TV address in settings.json.\n\n"
-    "Connect your TV once from the app folder:\n"
-    "uv run python -m scripts.tv_check --host <TV IP address>\n\n"
-    'Then start the app again. See "Connect your TV" in README.md.'
-)
 
 log = logging.getLogger("potplayer_tv_brightness")
 _instance_mutex: Any = None  # single-instance handle, held until exit
@@ -41,7 +49,7 @@ _instance_mutex: Any = None  # single-instance handle, held until exit
 
 @dataclass
 class Settings:
-    tv_host: str = ""  # set by scripts.tv_check --host
+    tv_host: str = ""  # set by the connect window or scripts.tv_check --host
     movie_brightness: int = 80
 
 
@@ -76,6 +84,33 @@ def icon_image(active: bool) -> Image.Image:
     return image
 
 
+def launch_command() -> str:
+    """How Windows starts this app at sign-in."""
+    if getattr(sys, "frozen", False):
+        return f'"{sys.executable}"'
+    pythonw = Path(sys.executable).with_name("pythonw.exe")
+    return f'"{pythonw}" "{DATA_DIR / "run.pyw"}"'
+
+
+def autostart_enabled() -> bool:
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
+            command = winreg.QueryValueEx(key, APP_NAME)[0]
+    except OSError:
+        return False
+    return bool(command == launch_command())
+
+
+def set_autostart(enabled: bool) -> None:
+    """Add or remove this app from the user's Run key (no admin rights needed)."""
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
+        if enabled:
+            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, launch_command())
+        else:
+            with contextlib.suppress(FileNotFoundError):
+                winreg.DeleteValue(key, APP_NAME)
+
+
 def _already_running() -> bool:
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     global _instance_mutex
@@ -86,6 +121,9 @@ def _already_running() -> bool:
 
 
 def main() -> None:
+    with contextlib.suppress(AttributeError, OSError):  # crisp windows on HiDPI
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         handlers=[
             RotatingFileHandler(
@@ -99,12 +137,14 @@ def main() -> None:
         log.info("Already running; exiting")
         return
     settings = load_settings()
-    if not settings.tv_host:
-        log.warning("No TV address in %s; exiting", SETTINGS_FILE.name)
-        ctypes.windll.user32.MessageBoxW(
-            None, NO_TV_MESSAGE, "PotPlayer TV Brightness", MB_ICONWARNING
-        )
-        return
+    first_run = not settings.tv_host
+    if first_run:
+        host = connect.connect_dialog("", KEY_FILE, icon_image(True))
+        if not host:
+            log.info("No TV connected; exiting")
+            return
+        settings.tv_host = host
+        save_settings(settings)
 
     import pystray  # Windows tray backend; imported here to keep tests headless
 
@@ -114,6 +154,7 @@ def main() -> None:
         settings.movie_brightness,
     )
     stop = threading.Event()
+    connecting = threading.Lock()  # one connect window at a time
 
     def choose(value: int) -> Any:
         def action(icon: Any, item: Any) -> None:
@@ -122,6 +163,29 @@ def main() -> None:
             log.info("Movie brightness set to %d", value)
 
         return action
+
+    def connect_tv(icon: Any, item: Any) -> None:
+        def run() -> None:  # off the tray thread, so the menu keeps working
+            try:
+                host = connect.connect_dialog(
+                    settings.tv_host, KEY_FILE, icon_image(True)
+                )
+                if host:
+                    settings.tv_host = host
+                    save_settings(settings)
+                    controller.tv = LGTV(host, KEY_FILE)
+                    log.info("Connected to the TV at %s", host)
+            finally:
+                connecting.release()
+
+        if connecting.acquire(blocking=False):
+            threading.Thread(target=run, name="connect", daemon=True).start()
+
+    def toggle_autostart(icon: Any, item: Any) -> None:
+        try:
+            set_autostart(not autostart_enabled())
+        except OSError:
+            log.exception("Could not change Start with Windows")
 
     def quit_app(icon: Any, item: Any) -> None:
         stop.set()
@@ -142,9 +206,15 @@ def main() -> None:
     icon = pystray.Icon(
         "potplayer-tv-brightness",
         icon_image(False),
-        "PotPlayer TV Brightness",
+        APP_NAME,
         pystray.Menu(
             pystray.MenuItem("Movie brightness", presets),
+            pystray.MenuItem("Connect TV…", connect_tv),
+            pystray.MenuItem(
+                "Start with Windows",
+                toggle_autostart,
+                checked=lambda item: autostart_enabled(),
+            ),
             pystray.MenuItem("Quit", quit_app),
         ),
     )
@@ -159,7 +229,7 @@ def main() -> None:
             view = (controller.boosted, controller.status)
             if view != shown:
                 icon.icon = icon_image(controller.boosted)
-                icon.title = f"PotPlayer TV Brightness: {controller.status}"[:127]
+                icon.title = f"{APP_NAME}: {controller.status}"[:127]
                 shown = view
         controller.shutdown()
 
@@ -171,5 +241,7 @@ def main() -> None:
             "Started (TV %s, movie brightness %d)", settings.tv_host, controller.target
         )
         worker.start()
+        if first_run:
+            icon.notify("Right-click the sun icon for options.", f"{APP_NAME} is on")
 
     icon.run(setup)

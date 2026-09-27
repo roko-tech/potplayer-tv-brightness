@@ -4,49 +4,51 @@ A Windows tray app for an LG webOS TV used as a PC monitor. While PotPlayer is p
 
 Tested on an LG C2 (webOS 25) with PotPlayer 64-bit. Other LG webOS TVs may work but are untested.
 
-## Requirements
+## Download
 
-- Windows 10 or 11, Python 3.12, [uv](https://docs.astral.sh/uv/), and PotPlayer.
-- An LG webOS TV on the same home network as the PC. No Developer Mode, rooting, or LG account is needed.
+Get **PotPlayer TV Brightness.exe** from the [latest release](https://github.com/roko-tech/potplayer-tv-brightness/releases/latest). There is nothing to install.
 
-## Install
+Windows may show "Windows protected your PC", because the app is not signed. Click **More info**, then **Run anyway**.
+
+## First run
+
+1. Turn on the TV. It must be on the same home network as the PC.
+2. Start the exe. The **Connect your LG TV** window finds your TV. Click **Connect**.
+3. On the TV, select **Accept** with the remote.
+
+A sun icon appears in the tray (it may be under the **^** arrow). No Developer Mode, rooting, or LG account is needed.
+
+## Use
+
+Right-click the sun icon:
+
+- **Movie brightness**: the value used while PotPlayer plays (30 to 100).
+- **Connect TV…**: connect again, for example after the TV's address changed.
+- **Start with Windows**: start the app when you sign in.
+- **Quit**: puts the original brightness back and exits.
+
+The icon turns amber while the movie brightness is on. Hover it to see the status. More in the [user guide](docs/user/README.md).
+
+## Run from source
+
+Needs Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```shell
 git clone https://github.com/roko-tech/potplayer-tv-brightness.git
 cd potplayer-tv-brightness
 uv sync
-```
-
-## Connect your TV
-
-Do this once, with the TV on.
-
-1. Find the TV's IP address: on the TV, open **Settings > General > Network** and select your wired or Wi-Fi connection. Your router's device list shows it too.
-2. Run this with your TV's address:
-
-   ```shell
-   uv run python -m scripts.tv_check --host 192.168.1.50
-   ```
-
-3. The TV asks to allow the connection. Select **Accept** with the remote within 60 seconds.
-
-When it works, it prints the TV's picture mode and brightness. Tips and fixes: [Connect your TV](docs/user/README.md#connect-your-tv).
-
-## Start
-
-```shell
 .venv\Scripts\pythonw.exe run.pyw
 ```
 
-A sun icon appears in the tray. To start it with Windows, see the [user guide](docs/user/README.md#start-with-windows).
+The same Connect window appears on first start. From source, the app keeps its files in the repository folder.
 
-## Use
+## Build the exe
 
-- Right-click the tray icon, then **Movie brightness** to pick the value (30 to 100).
-- The icon turns amber while the movie brightness is on. Hover it to see the status.
-- **Quit** restores the original brightness before exiting.
+```shell
+uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec
+```
 
-Details and troubleshooting: [user guide](docs/user/README.md).
+The result is `dist\PotPlayer TV Brightness.exe`.
 
 ## Development
 

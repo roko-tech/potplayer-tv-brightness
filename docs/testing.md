@@ -51,7 +51,11 @@ uv run python -m unittest discover -s tests -v
 git diff --check
 ```
 
-There is no build or package step; the app runs from source.
+Build the exe on Windows (not part of CI):
+
+```shell
+uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec
+```
 
 ## What each suite proves
 
@@ -59,7 +63,9 @@ There is no build or package step; the app runs from source.
 | --- | --- | --- |
 | `tests/test_controller.py` | Boost/restore rules: primary journey, 1 s settle, HDR skip, per-mode originals, TV unreachable, crash and restart, Quit | Both |
 | `tests/test_tv.py` | SSAP protocol: saved key, first-use pairing, request/response matching, errors and timeouts, malformed address, `Origin` suppressed | Both |
-| `tests/test_app.py` | Settings defaults (no TV address), clamping, invalid file; no-TV message and exit; tray icon image; PotPlayer probe runs | Windows |
+| `tests/test_app.py` | Settings defaults (no TV address), clamping, invalid file; first run opens the Connect window, then the tray, or exits when it is closed; Start with Windows against a throwaway registry key; the exe's `%APPDATA%` folder and launch command; tray icon image; PotPlayer probe runs | Windows |
+| `tests/test_discovery.py` | TV search against a fake TV on localhost (real UDP and HTTP): name read once despite duplicate replies, never fetched from another host, non-LG devices ignored | Both |
+| `tests/test_connect.py` | The Connect window, hidden, with the search and TV faked: found TV preselected and returned, nothing found, a declined prompt and retry, a typed address kept, each error explained | Windows |
 | `tests/test_tv_check.py` | Connect command: saves `--host` only after the TV answers, explains a missing address, clamps `--set` | Windows |
 | `tests/test_verify.py`, `tests/test_github_settings.py` | Template tooling | Both |
 
@@ -69,7 +75,7 @@ The fakes model the TV and PotPlayer; they do not prove the real ones behave the
 
 - **Test data:** synthetic only. Fakes stand in for the TV and websocket; live runs use a generated test-pattern clip (`ffmpeg -f lavfi -i testsrc2`), never personal media.
 - **Coverage:** every rule in `controller.py` and every protocol branch in `tv.py` has a test. There is no percentage target.
-- **Unacceptable regressions:** losing or overwriting a saved original; writing to a different picture mode, to an HDR mode, or any setting other than `backlight`; TV calls on the tray thread; the pairing key appearing in logs or Git.
+- **Unacceptable regressions:** losing or overwriting a saved original; writing to a different picture mode, to an HDR mode, or any setting other than `backlight`; TV calls or other waits on the tray thread (except Quit's bounded join); tests that open real windows or write the developer's own files; the pairing key appearing in logs or Git.
 
 ## Live checks
 
@@ -79,12 +85,15 @@ Run these after changing `tv.py` or `potplayer.py`, after a TV firmware update, 
 2. `uv run python -m scripts.tv_check` prints the picture mode and brightness. `--set N` writes and reads back.
 3. Start the app and play a video in PotPlayer. Then pause, resume, minimize, and close it, checking the TV brightness after each step with `tv_check`.
 4. Kill the app while a video plays: `restore.json` must keep the original. Restart it, then close PotPlayer: the original must come back.
+5. The exe as a new user: build it, make sure `%APPDATA%\PotPlayer TV Brightness` does not exist, and start it. The Connect window must list the TV; after Connect and Accept, the tray and a notification appear and the files land in `%APPDATA%`. Then pick a preset, play and pause a video, turn on Start with Windows, use Connect TV…, and Quit. Check for a Windows Firewall prompt, and scan the exe with Windows Defender.
 
 Last run of steps 2 to 4: 2026-09-25, LG C2 webOS 25 (firmware 33.x), PotPlayer 64-bit, silent test-pattern clip in a separate PotPlayer instance. Brightness 20 → 80 on play, 20 on pause, 80 on resume, 20 on minimize, 80 kept through a crash and restart with `{"normal": 20}` on disk, 20 on close. A second, paused and minimized PotPlayer window never triggered a change.
 
 Last run of step 1: 2026-09-26, same TV, from a scratch copy so the real key and settings stayed untouched. No address: the command explained `--host`. An address with a port (`<TV IP>:3001`): a clear "Cannot connect" error. Decline: `Pairing refused: 403 Error: User rejected pairing`, nothing saved. Accept: address and key saved, `normal` at 20 printed; a second run reused both without a prompt; `--set 20` read back 20. The tray app started without an address showed the "No TV address" dialog, logged a warning, and exited.
 
-Not live-tested yet: tray menu clicks (presets, Quit), HDR mode switching, and a switched-off TV, which are covered by unit tests only; and a TV without Developer Mode (the test TV has it on for other apps, and turning it off would uninstall them).
+Last run of step 5: 2026-09-27, same TV and PC, 18.8 MB exe built with PyInstaller 6.22.3. Defender: no threats. The window listed `[LG] webOS TV OLED48C26LA` and connected after Accept in about 25 s from start; no firewall prompt appeared; settings and key were written to `%APPDATA%`, the repository copy's untouched. Preset 40 saved; play gave `Watching: brightness 40 (restores 20)` and pause `Restored brightness 20 (normal)`; Start with Windows wrote the exe's path to the `Run` key (removed after the test); Connect TV… reconnected from the tray; Quit left the TV at 20 with nothing owed.
+
+Not live-tested yet: HDR mode switching and a switched-off TV, which are covered by unit tests only; the exe on another PC or a PC with only one network adapter; and a TV without Developer Mode (the test TV has it on for other apps, and turning it off would uninstall them).
 
 ## Evidence in pull requests
 

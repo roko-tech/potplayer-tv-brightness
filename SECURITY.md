@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the current default branch receives security fixes. There are no releases yet.
+Only the latest release and the current default branch receive security fixes.
 
 ## Report a vulnerability
 
