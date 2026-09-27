@@ -21,7 +21,7 @@ A Windows tray app that each user runs on their own PC, as a downloaded exe or f
 | Original brightness (`restore.json`) | Low | @rokogan | Local file, Git-ignored | Deleted once restored |
 | Settings and log | Low (TV IP, brightness, status) | @rokogan | Local files, Git-ignored | Log rotates at 256 KB |
 | Released exe | High: runs as the user on every PC that downloads it | @rokogan | Built from a reviewed commit on the maintainer's PC; GitHub release | Replaced by the next release |
-| Source and CI | Medium | @rokogan | GitHub repository, written to be public: no keys, TV addresses, or personal data; commits use the GitHub noreply identity | Git history |
+| Source and CI | Medium | @rokogan | Public GitHub repository (since 2026-09-27): no keys, TV addresses, or personal data; commits use the GitHub noreply identity; secret scanning, push protection, and a protected `main` | Git history |
 
 ## Actors and capabilities
 
