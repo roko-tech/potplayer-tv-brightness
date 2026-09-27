@@ -1,7 +1,7 @@
 # PyInstaller build of the release files in dist/: PotPlayer-TV-Brightness.exe
 # (one file, no console), THIRD-PARTY-NOTICES.txt, and SHA256SUMS.txt.
 #
-#     uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec
+#     packaging\build.cmd   (compiles PyInstaller's launcher first, then runs this)
 #
 # The exe icon is drawn from the tray icon, so there is no binary to keep in Git.
 import hashlib

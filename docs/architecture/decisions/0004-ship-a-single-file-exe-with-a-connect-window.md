@@ -36,7 +36,7 @@ Adds a Start menu entry and an uninstall entry, but needs more tooling and is st
 
 ## Decision
 
-- **Build:** PyInstaller from `packaging/potplayer-tv-brightness.spec`, in its own `build` dependency group so normal syncs and CI do not install it. Windowed, no UPX (it raises antivirus false positives), with the icon drawn from the tray icon at build time.
+- **Build:** `packaging\build.cmd` builds PyInstaller from its hash-pinned source with the launcher compiled locally (Visual Studio Build Tools), then builds from `packaging/potplayer-tv-brightness.spec`. PyInstaller sits in its own `build` dependency group so normal syncs and CI do not install it. Windowed, no UPX (it raises antivirus false positives), with the icon drawn from the tray icon at build time. On VirusTotal the same exe drew 4 of 71 detections with the stock launcher and 2 of 71 (Bkav Pro, SecureAge) with a locally compiled one.
 - **First run:** a Tk window finds LG TVs with an SSDP search sent from every IPv4 address (VPN and virtual adapters otherwise swallow it), lists them by name, and pairs on Connect. Typing the IP stays as a fallback. The address is saved only after the TV answers. The tray menu's **Connect TV…** reopens the window on its own thread, since pystray runs menu actions on the tray thread.
 - **Files:** `%APPDATA%\PotPlayer TV Brightness` when packaged; the repository folder when run from source, as before.
 - **Start with Windows:** a tray toggle that writes the per-user `Run` registry key, which needs no admin rights.

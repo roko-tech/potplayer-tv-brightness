@@ -44,8 +44,10 @@ The same Connect window appears on first start. From source, the app keeps its f
 
 ## Build the exe
 
+Needs [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the "Desktop development with C++" workload, because PyInstaller's launcher is compiled from source (the stock one draws more antivirus false alarms).
+
 ```shell
-uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec
+packaging\build.cmd
 ```
 
 It writes the release files to `dist\`: `PotPlayer-TV-Brightness.exe`, `THIRD-PARTY-NOTICES.txt`, and `SHA256SUMS.txt`. The steps to publish a release are in the [runbook](docs/operations/runbook.md#release-the-exe).

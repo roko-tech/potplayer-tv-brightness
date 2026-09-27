@@ -51,10 +51,10 @@ uv run python -m unittest discover -s tests -v
 git diff --check
 ```
 
-Build the exe on Windows (not part of CI):
+Build the exe on Windows (not part of CI; needs Visual Studio Build Tools with C++, since PyInstaller's launcher is compiled from source):
 
 ```shell
-uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec
+packaging\build.cmd
 ```
 
 ## What each suite proves
@@ -95,7 +95,9 @@ Last run of step 1: 2026-09-26, same TV, from a scratch copy so the real key and
 
 Last run of step 5 on the owner's PC: 2026-09-27, same TV, 18.8 MB exe built with PyInstaller 6.22.3, started from File Explorer. Defender: no threats; no firewall prompt. The first attempt did nothing visible and the owner closed the window (`No TV connected` in the log); the Connect button was clickable during the search, which is now fixed and tested. The second start connected after Accept; the files were in the real `%APPDATA%`; preset 40, then play gave `Watching: brightness 40 (restores 20)` and pause `Restored brightness 20 (normal)`; Start with Windows wrote the exe's path to the real `Run` key. An earlier run launched from inside the Claude desktop app wrote to its redirected copy instead, which is how the redirection above was found.
 
-Not live-tested yet: HDR mode switching and a switched-off TV, which are covered by unit tests only; the exe on another PC or a PC with only one network adapter; and a TV without Developer Mode (the test TV has it on for other apps, and turning it off would uninstall them).
+Last run of step 5 in Windows Sandbox: 2026-09-27, Windows 10 without Python, the release exe marked as downloaded from GitHub. SmartScreen showed "Windows protected your PC" with "Unknown publisher"; More info, then Run anyway. The search found nothing, as expected behind the sandbox's NAT, and Connect stayed greyed out until the address was typed. After Accept on the TV the log read `Connecting`, `Paired`, `Started`; the icon sat under the tray's **^** arrow with status Idle; the menu showed all four items; Start with Windows wrote the `Run` value and showed its check mark; Quit exited. No firewall rule was needed or created. VirusTotal: 4 of 71 engines flagged the exe built with PyInstaller's stock launcher, 2 of 71 (Bkav Pro, SecureAge) the one with a locally compiled launcher; Windows Defender found nothing in either.
+
+Not live-tested yet: HDR mode switching and a switched-off TV, which are covered by unit tests only; the TV search from a second PC on the same network (the sandbox is behind NAT, so only the typed-address path ran there); and a TV without Developer Mode (the test TV has it on for other apps, and turning it off would uninstall them).
 
 ## Evidence in pull requests
 

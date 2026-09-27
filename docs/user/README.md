@@ -85,7 +85,7 @@ The app only talks to your TV on the local network: a search to find it, a reque
 
 - Windows only. Tested with an LG C2 on webOS 25 and PotPlayer 64-bit.
 - Some newer LG firmware blocks the method this app uses (reported on a 2026 C6 with firmware 43.21.60). A firmware update could do the same to older models.
-- The exe is not signed, so Windows warns on first run, and some antivirus products may flag it. Windows Defender found nothing in the tested build.
+- The exe is not signed, so Windows warns on first run, and a few antivirus products flag it. For v0.1.0, Windows Defender found nothing, and on VirusTotal 2 of 71 engines (Bkav Pro and SecureAge) flag it with generic heuristics that hit many unsigned apps. The release notes link the full report.
 - Brightness settings belong to the TV's current input. If you switch the TV to another input or app while a movie is still playing and the movie then ends, the restore writes to that input's picture mode (if the mode name matches).
 - A picture mode change in the middle of a movie is not boosted until the next play.
 

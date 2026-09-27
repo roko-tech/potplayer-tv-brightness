@@ -47,6 +47,7 @@ Reviewed 2026-09-27 for the first release.
 - [SignPath Foundation](https://signpath.io/solutions/open-source-community) — free code signing for open-source projects built in CI; the certificate names SignPath Foundation as publisher.
 - [Azure Artifact Signing](https://azure.microsoft.com/en-us/products/artifact-signing) — about $10 a month; open to individual developers only in the US and Canada.
 - [Antivirus false positives with PyInstaller](https://www.pythonguis.com/faq/problems-with-antivirus-software-and-pyinstaller/) — avoid UPX, prefer signing, and report false positives to the vendor.
+- [Building PyInstaller's bootloader](https://pyinstaller.org/en/stable/bootloader-building.html) — compiling the launcher from source, which `packaging\build.cmd` does; it halved this app's VirusTotal detections.
 - [LGPL and GPL compliance with PyInstaller](https://velovix.github.io/post/lgpl-gpl-license-compliance-with-pyinstaller/) — why a public source and build recipe matter for bundled LGPL libraries.
 
 ## AI-assisted engineering

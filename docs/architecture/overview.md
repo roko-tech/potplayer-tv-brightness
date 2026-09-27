@@ -44,7 +44,7 @@ Dependency direction: `app` → `connect` → `discovery`/`tv` → `controller`.
 
 ## Packaging
 
-PyInstaller builds `dist\PotPlayer-TV-Brightness.exe` from `packaging/potplayer-tv-brightness.spec`: one file, no console, `pairing.json` bundled, the icon drawn from the tray icon, and Windows version info read from `pyproject.toml`. The same build writes `THIRD-PARTY-NOTICES.txt` from the bundled packages' license files and `SHA256SUMS.txt`. PyInstaller is in the `build` dependency group only; releases follow the [runbook](../operations/runbook.md#release-the-exe). See [ADR-0004](decisions/0004-ship-a-single-file-exe-with-a-connect-window.md).
+`packaging\build.cmd` compiles PyInstaller's launcher from source (fewer antivirus false alarms than the stock one), then PyInstaller builds `dist\PotPlayer-TV-Brightness.exe` from `packaging/potplayer-tv-brightness.spec`: one file, no console, `pairing.json` bundled, the icon drawn from the tray icon, and Windows version info read from `pyproject.toml`. The same build writes `THIRD-PARTY-NOTICES.txt` from the bundled packages' license files and `SHA256SUMS.txt`. PyInstaller is in the `build` dependency group only; releases follow the [runbook](../operations/runbook.md#release-the-exe). See [ADR-0004](decisions/0004-ship-a-single-file-exe-with-a-connect-window.md).
 
 ## Data
 
