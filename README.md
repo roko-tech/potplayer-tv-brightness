@@ -6,9 +6,9 @@ Tested on an LG C2 (webOS 25) with PotPlayer 64-bit. Other LG webOS TVs may work
 
 ## Download
 
-Get **PotPlayer TV Brightness.exe** from the [latest release](https://github.com/roko-tech/potplayer-tv-brightness/releases/latest). There is nothing to install.
+Get **PotPlayer-TV-Brightness.exe** from the [latest release](https://github.com/roko-tech/potplayer-tv-brightness/releases/latest). There is nothing to install.
 
-Windows may show "Windows protected your PC", because the app is not signed. Click **More info**, then **Run anyway**.
+Windows may show "Windows protected your PC", because the app is not signed. Click **More info**, then **Run anyway**. Releases are immutable and list SHA-256 checksums; the [user guide](docs/user/README.md#install) shows how to check a download.
 
 ## First run
 
@@ -48,7 +48,7 @@ The same Connect window appears on first start. From source, the app keeps its f
 uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec
 ```
 
-The result is `dist\PotPlayer TV Brightness.exe`.
+It writes the release files to `dist\`: `PotPlayer-TV-Brightness.exe`, `THIRD-PARTY-NOTICES.txt`, and `SHA256SUMS.txt`. The steps to publish a release are in the [runbook](docs/operations/runbook.md#release-the-exe).
 
 ## Development
 
@@ -73,6 +73,6 @@ uv run python -m scripts.tv_check        # live: read the TV's picture mode and 
 
 [MIT](LICENSE).
 
-The TV pairing manifest, `potplayer_tv_brightness/pairing.json`, is LG's signed remote-app manifest as published in [lgtv2](https://github.com/hobbyquaker/lgtv2) (MIT, Copyright (c) Sebastian Raff).
+The TV pairing manifest, `potplayer_tv_brightness/pairing.json`, is LG's signed remote-app manifest as published in [lgtv2](https://github.com/hobbyquaker/lgtv2) (MIT, Copyright (c) Sebastian Raff). The exe also bundles Python and other libraries, including pystray (LGPL-3.0); their licenses are in each release's `THIRD-PARTY-NOTICES.txt`.
 
 Not affiliated with LG Electronics or the makers of PotPlayer.

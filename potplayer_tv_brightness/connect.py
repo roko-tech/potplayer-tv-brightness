@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import queue
 import threading
 import tkinter as tk
@@ -25,6 +26,8 @@ from .tv import LGTV
 
 TITLE = "PotPlayer TV Brightness"
 WRAP = 380  # status text width in pixels
+
+log = logging.getLogger(__name__)
 
 
 def explain(error: TVError, host: str) -> str:
@@ -57,6 +60,7 @@ class ConnectWindow:
     def __init__(self, host: str, key_file: Path, icon: Image.Image) -> None:
         self.key_file = key_file
         self.connected: str | None = None
+        self.connecting = False
         self.found: list[FoundTV] = []
         self.results: queue.Queue[Callable[[], None]] = queue.Queue()
 
@@ -98,6 +102,8 @@ class ConnectWindow:
         cancel = ttk.Button(buttons, text="Cancel", command=root.destroy)
         cancel.pack(side="left", padx=(6, 0))
         root.bind("<Return>", lambda _: self._connect())
+        self.address.trace_add("write", lambda *_: self._update_connect())
+        self._update_connect()
 
         root.update_idletasks()  # center it, and bring it to the front
         x = (root.winfo_screenwidth() - root.winfo_reqwidth()) // 2
@@ -141,12 +147,20 @@ class ConnectWindow:
             self.results.get()()
         self.root.after(100, self._drain)
 
+    def _update_connect(self) -> None:
+        """Connect is clickable only with an address and no attempt running."""
+        ready = bool(self.address.get().strip()) and not self.connecting
+        self.connect_button.state(["!disabled"] if ready else ["disabled"])
+
     def _search(self) -> None:
         self.search_button.state(["disabled"])
         self.status.set("Searching for LG TVs…")
 
         def work() -> Callable[[], None]:
-            return partial(self._show, find_tvs())
+            tvs = find_tvs()
+            found = ", ".join(f"{tv.name} ({tv.host})" for tv in tvs)
+            log.info("TV search found %d: %s", len(tvs), found or "none")
+            return partial(self._show, tvs)
 
         self._in_background(work)
 
@@ -174,29 +188,34 @@ class ConnectWindow:
 
     def _connect(self) -> None:
         host = self.address.get().strip()
-        if self.connect_button.instate(["disabled"]):
-            return  # already connecting
-        if not host:
+        if self.connecting:
+            return
+        if not host:  # Enter pressed with an empty address
             self.status.set("Select your TV or type its IP address.")
             return
-        self.connect_button.state(["disabled"])
+        self.connecting = True
+        self._update_connect()
         self.status.set(
-            "Connecting… If the TV asks to allow the connection, "
+            f"Connecting to {host}… If the TV asks to allow the connection, "
             "select Accept with the remote."
         )
 
         def work() -> Callable[[], None]:
+            log.info("Connecting to the TV at %s", host)
             try:
                 with LGTV(host, self.key_file).session() as tv:
                     tv.read_picture()
             except TVError as error:
+                log.warning("Connecting to %s failed: %s", host, error)
                 return partial(self._failed, explain(error, host))
+            log.info("Paired with the TV at %s", host)
             return partial(self._done, host)
 
         self._in_background(work)
 
     def _failed(self, message: str) -> None:
-        self.connect_button.state(["!disabled"])
+        self.connecting = False
+        self._update_connect()
         self.search_button.state(["!disabled"])
         self.status.set(message)
 

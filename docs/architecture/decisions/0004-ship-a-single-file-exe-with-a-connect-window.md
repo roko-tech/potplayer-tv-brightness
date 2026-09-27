@@ -40,7 +40,8 @@ Adds a Start menu entry and an uninstall entry, but needs more tooling and is st
 - **First run:** a Tk window finds LG TVs with an SSDP search sent from every IPv4 address (VPN and virtual adapters otherwise swallow it), lists them by name, and pairs on Connect. Typing the IP stays as a fallback. The address is saved only after the TV answers. The tray menu's **Connect TV…** reopens the window on its own thread, since pystray runs menu actions on the tray thread.
 - **Files:** `%APPDATA%\PotPlayer TV Brightness` when packaged; the repository folder when run from source, as before.
 - **Start with Windows:** a tray toggle that writes the per-user `Run` registry key, which needs no admin rights.
-- **Signing:** none. Windows SmartScreen warns on first run; the docs say how to continue. Signing needs a paid certificate, which was not approved.
+- **Releases:** immutable GitHub releases (tag and files locked after publishing, with a GitHub-signed attestation), each with the exe, `SHA256SUMS.txt`, and `THIRD-PARTY-NOTICES.txt` generated from the bundled packages' license files. pystray is LGPL-3.0; the public source and build steps let anyone rebuild with a modified copy. The exe name has no spaces (GitHub turns them into dots), and its version info comes from `pyproject.toml`.
+- **Signing:** none for now. Windows SmartScreen warns on first run; the docs say how to continue. Since 2024 even EV certificates no longer skip SmartScreen's reputation check. SignPath Foundation signs open-source projects for free once the repository is public and builds in CI; Azure Artifact Signing is limited to individuals in the US and Canada.
 
 ## Consequences
 

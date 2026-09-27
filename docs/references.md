@@ -37,6 +37,18 @@ These primary or canonical sources informed the starter. Links were reviewed on 
 
 - [PyInstaller manual](https://pyinstaller.org/en/stable/) — one-file builds, spec files, and the license exception that allows bundling apps under any license.
 
+## Releasing a Windows exe
+
+Reviewed 2026-09-27 for the first release.
+
+- [Immutable releases are generally available](https://github.blog/changelog/2025-10-28-immutable-releases-are-now-generally-available/) — locked tags and assets with a signed release attestation; publish from a draft with the assets attached.
+- [Artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations) — build provenance from GitHub Actions, verifiable with `gh attestation verify`; the next step once CI can run.
+- [Code signing options for Windows apps](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options) — certificate types and SmartScreen reputation.
+- [SignPath Foundation](https://signpath.io/solutions/open-source-community) — free code signing for open-source projects built in CI; the certificate names SignPath Foundation as publisher.
+- [Azure Artifact Signing](https://azure.microsoft.com/en-us/products/artifact-signing) — about $10 a month; open to individual developers only in the US and Canada.
+- [Antivirus false positives with PyInstaller](https://www.pythonguis.com/faq/problems-with-antivirus-software-and-pyinstaller/) — avoid UPX, prefer signing, and report false positives to the vendor.
+- [LGPL and GPL compliance with PyInstaller](https://velovix.github.io/post/lgpl-gpl-license-compliance-with-pyinstaller/) — why a public source and build recipe matter for bundled LGPL libraries.
+
 ## AI-assisted engineering
 
 - [OpenAI: Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md) — layered repository guidance and discovery.

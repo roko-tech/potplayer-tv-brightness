@@ -86,12 +86,23 @@ class ConnectWindowTest(unittest.TestCase):
         self.pump(window, lambda: window.status.get().startswith("No TV found"))
         self.assertIn("type its IP address", window.status.get())
 
-    def test_a_declined_prompt_explains_and_allows_a_retry(self) -> None:
+    def test_connect_waits_for_an_address(self) -> None:
+        # A first click during the search used to do nothing visible.
+        window = self.open([])
+        self.assertTrue(window.connect_button.instate(["disabled"]))  # searching
+        self.pump(window, lambda: window.status.get().startswith("No TV found"))
+        self.assertTrue(window.connect_button.instate(["disabled"]))
+        window.address.set("192.168.1.50")  # typed by the user
+        self.assertTrue(window.connect_button.instate(["!disabled"]))
+
+    def test_a_declined_prompt_explains_logs_and_allows_a_retry(self) -> None:
         self.refusal = TVError("Pairing refused: 403 Error: User rejected pairing")
         window = self.open([], host="192.168.1.50")
         self.pump(window, lambda: window.status.get().startswith("No TV found"))
-        window.connect_button.invoke()
-        self.pump(window, lambda: "declined" in window.status.get())
+        with self.assertLogs("potplayer_tv_brightness.connect", "WARNING") as logs:
+            window.connect_button.invoke()
+            self.pump(window, lambda: "declined" in window.status.get())
+        self.assertIn("Connecting to 192.168.1.50 failed", logs.output[0])
         self.assertIsNone(window.connected)
         self.assertTrue(window.connect_button.instate(["!disabled"]))
 

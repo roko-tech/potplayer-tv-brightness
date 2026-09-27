@@ -9,7 +9,7 @@
 
 - User journey served: TV brightness follows PotPlayer playback.
 - Environment: each user's Windows PC and LG TV on their home network. No servers.
-- Deployment unit: `PotPlayer TV Brightness.exe` from a GitHub release, or this repository run from source with `.venv\Scripts\pythonw.exe run.pyw`.
+- Deployment unit: `PotPlayer-TV-Brightness.exe` from a GitHub release, or this repository run from source with `.venv\Scripts\pythonw.exe run.pyw`.
 - External dependency: the TV's SSAP API on port 3001, and SSDP on the LAN to find it.
 - Logs: `potplayer-tv-brightness.log` in `%APPDATA%\PotPlayer TV Brightness` (exe) or the repository folder (source). Status: tray icon tooltip.
 - Version: the release the exe came from, or `git log -1` from source.
@@ -28,10 +28,14 @@
 
 ## Release the exe
 
-1. Check out the reviewed commit on `main` on a Windows PC and run all [testing](../testing.md) commands.
-2. Build: `uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec`.
-3. Scan `dist\PotPlayer TV Brightness.exe` with Windows Defender and run live check 5 in [testing](../testing.md).
-4. Record its SHA-256 (`certutil -hashfile "dist\PotPlayer TV Brightness.exe" SHA256`), then publish a GitHub release with the exe attached and the hash in the notes.
+Releases are immutable (a repository setting): once published, the tag and files cannot change, and GitHub signs a record of them. A bad build is fixed with a new version.
+
+1. Set the version in `pyproject.toml` (the exe's version info reads it) and move the changelog entries under it, then merge to `main`.
+2. On a Windows PC, run all [testing](../testing.md) commands in a fresh clone of that commit, then build there: `uv run --group build pyinstaller --noconfirm --clean packaging/potplayer-tv-brightness.spec`. `dist\` then holds `PotPlayer-TV-Brightness.exe`, `THIRD-PARTY-NOTICES.txt`, and `SHA256SUMS.txt`.
+3. Check that exact exe: Windows Defender (`MpCmdRun.exe -Scan -ScanType 3 -File <exe>`), VirusTotal, and live check 5 in [testing](../testing.md), on this PC and in Windows Sandbox.
+4. Tag the commit: `git tag -a vX.Y.Z -m "vX.Y.Z"`, then `git push origin vX.Y.Z`.
+5. Create a draft release with the three files and notes taken from the changelog, including the checksums: `gh release create vX.Y.Z dist/PotPlayer-TV-Brightness.exe dist/THIRD-PARTY-NOTICES.txt dist/SHA256SUMS.txt --draft --title vX.Y.Z --notes-file <notes>`.
+6. Publish it with `gh release edit vX.Y.Z --draft=false`, then check it: `gh release verify vX.Y.Z` and `gh release verify-asset vX.Y.Z dist/PotPlayer-TV-Brightness.exe`.
 
 ## Update and roll back
 

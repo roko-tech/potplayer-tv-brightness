@@ -52,6 +52,8 @@ Completed in the initial commits (2026-09-25) and updated for public release (20
 - [ ] Required CI checks and conversation resolution: blocked with the ruleset.
 - [x] Dependabot alerts and security updates enabled. Secret scanning and push protection: GitHub refused on 2026-09-25 with HTTP 422 "Secret scanning is not available for this repository." (GitHub Free, private repository). Not upgraded; both are free once the repository is public (see below).
 - [x] Actions: GitHub-owned only, full-SHA pinning required, read-only workflow token.
+- [x] Immutable releases enabled (2026-09-27): published tags and files cannot change, and each release gets a GitHub-signed attestation.
+- [x] Repository recreated on 2026-09-27, so its history and activity log hold no trace of the commits made before the identity rewrite. The previous repository was renamed and kept private for the owner to delete.
 - [x] AI review: not connected (optional). Project review rules are in `AGENTS.md`.
 
 ### When the repository goes public
@@ -64,7 +66,9 @@ The repository is ready for public release but stays private until the owner swi
 4. Re-run CI on `main`: find the latest run ID with `gh run list --repo roko-tech/potplayer-tv-brightness --workflow ci.yml --limit 1`, then `gh run rerun <run ID> --repo roko-tech/potplayer-tv-brightness`. Hosted runners are free for public repositories, so the billing block may no longer apply.
 5. After a green run, import the ruleset with the command in [docs/github-governance.md](docs/github-governance.md).
 6. `python scripts/github_settings.py` then reports `private` as drift. That is expected: the template-owned script assumes private repositories.
-7. Publish the first release with the exe and its SHA-256, following "Release the exe" in the [runbook](docs/operations/runbook.md). The README's download link points there.
+7. Once CI runs: build releases in CI with artifact attestations, and apply to SignPath Foundation for free code signing (both need a public repository; see [references](docs/references.md#releasing-a-windows-exe)).
+
+Releases follow "Release the exe" in the [runbook](docs/operations/runbook.md#release-the-exe). A release published while the repository is private is visible only to its collaborators until it goes public.
 
 ## 8. Protect users and data
 
@@ -79,4 +83,4 @@ The repository is ready for public release but stays private until the owner swi
 - [ ] CI green on Ubuntu and Windows: **blocked by GitHub billing.** Every job for every roko-tech repository fails before its first step with: "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings" (organization plan: free; seen 2026-09-25). The same commands pass locally on Windows. Ubuntu is unverified; the tests that run there are pure Python.
 - [x] Primary workflow exercised on the real LG C2 and PotPlayer (see [docs/testing.md](docs/testing.md)), from source and as the exe (2026-09-27).
 - [x] Known limitations and untested surfaces recorded in the [user guide](docs/user/README.md) and [testing](docs/testing.md).
-- [x] Distribution: the exe as a GitHub release asset, built and published by the owner with the runbook's release steps; source through this repository. No release is published yet.
+- [x] Distribution: the exe as an immutable GitHub release with `THIRD-PARTY-NOTICES.txt` and `SHA256SUMS.txt`, built and published with the runbook's release steps; source through this repository.

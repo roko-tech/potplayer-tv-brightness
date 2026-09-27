@@ -2,9 +2,11 @@
 
 ## Install
 
-Download **PotPlayer TV Brightness.exe** from the [latest release](https://github.com/roko-tech/potplayer-tv-brightness/releases/latest) and put it anywhere, for example in Documents. There is nothing to install.
+Download **PotPlayer-TV-Brightness.exe** from the [latest release](https://github.com/roko-tech/potplayer-tv-brightness/releases/latest) and put it anywhere, for example in Documents. There is nothing to install.
 
 Windows may show "Windows protected your PC", because the app is not signed. Click **More info**, then **Run anyway**.
+
+To check the download (optional), compare `Get-FileHash .\PotPlayer-TV-Brightness.exe` in PowerShell with the release's `SHA256SUMS.txt`. With the [GitHub CLI](https://cli.github.com/), `gh release verify-asset <tag> PotPlayer-TV-Brightness.exe --repo roko-tech/potplayer-tv-brightness` also checks GitHub's signed record of the release.
 
 ## Connect your TV
 
@@ -63,6 +65,7 @@ The exe keeps its files in `%APPDATA%\PotPlayer TV Brightness` (paste that into 
 
 | Symptom | What to do |
 | --- | --- |
+| **Connect** is greyed out | It waits for an address: let the search finish and select your TV, or type its IP address. |
 | "No TV found" | Is the TV on and on the same network, with no VPN or guest Wi-Fi? Click **Search again**, or type its IP address. |
 | "The TV declined" | Click **Connect**, then select **Accept** on the TV. |
 | "No answer from … in time" | Click **Connect** and select **Accept** within 60 seconds. |
