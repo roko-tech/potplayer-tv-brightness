@@ -25,6 +25,7 @@ A sun icon appears in the tray (it may be under the **^** arrow). No Developer M
 Right-click the sun icon:
 
 - **Movie brightness**: the value used while PotPlayer plays (30 to 100).
+- **Dark scene brightness**: Off by default. Pick a higher value, and dark scenes get it instead: the app checks how bright the picture is and switches back to the movie value for normal scenes.
 - **Connect TV…**: connect again, for example after the TV's address changed.
 - **Start with Windows**: start the app when you sign in.
 - **Quit**: puts the original brightness back and exits.

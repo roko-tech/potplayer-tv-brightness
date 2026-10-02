@@ -44,7 +44,7 @@ uv run python -m unittest discover -s tests -v
 git diff --check
 ```
 
-The exe is built on Windows only, outside CI, with `packaging\build.cmd` (needs Visual Studio Build Tools with C++: it compiles PyInstaller's launcher from source). For live checks, start it from File Explorer: processes launched from a packaged app, such as a Claude desktop app terminal, get that app's private copy of `%APPDATA%` and `HKCU`. Changes to `tv.py`, `potplayer.py`, `discovery.py`, `connect.py`, `app.py`, or packaging also need the matching live checks in `docs/testing.md` (some change the real TV's brightness; tell the owner first). `scripts/verify.py`, `scripts/github_settings.py`, and their tests are template-owned: keep them identical to roko-tech/project-starter (ruff skips them). Report commands run, results, and untested surfaces. Do not claim that mocked or hermetic tests prove live integrations, installation, deployment, migration, backup restoration, or user-visible behavior.
+The exe is built on Windows only, outside CI, with `packaging\build.cmd` (needs Visual Studio Build Tools with C++: it compiles PyInstaller's launcher from source). For live checks, start it from File Explorer: processes launched from a packaged app, such as a Claude desktop app terminal, get that app's private copy of `%APPDATA%` and `HKCU`. Changes to `tv.py`, `potplayer.py`, `scene.py`, `discovery.py`, `connect.py`, `app.py`, or packaging also need the matching live checks in `docs/testing.md` (some change the real TV's brightness; tell the owner first). `scripts/verify.py`, `scripts/github_settings.py`, and their tests are template-owned: keep them identical to roko-tech/project-starter (ruff skips them). Report commands run, results, and untested surfaces. Do not claim that mocked or hermetic tests prove live integrations, installation, deployment, migration, backup restoration, or user-visible behavior.
 
 ## Safety and authority
 
@@ -55,11 +55,12 @@ The exe is built on Windows only, outside CI, with `packaging\build.cmd` (needs 
 
 ## Code Review Rules
 
-- The original brightness must be saved to `restore.json` before the movie value is written, and must never be overwritten while it is still owed. Flag any path that can lose it.
+- The original brightness must be saved to `restore.json` before a movie or dark scene value is written, and must never be overwritten while it is still owed. Flag any path that can lose it.
 - Restores may only write to the picture mode the original came from. HDR and Dolby Vision modes must stay untouched.
 - TV network calls run on the poll thread or the Connect window's worker threads, with bounded timeouts. The tray thread may only wait for the poll thread on Quit, and that wait must stay bounded.
 - SSDP replies are untrusted: fetch a TV's name only from the replying address, bounded in time and size, with no XML parser and no proxy. Nothing connects to a found TV until the user clicks Connect.
-- Tests must never open real windows or write the developer's own settings, key, log, or `Run` value: patch `connect_dialog`, `save_settings`, and the log handler, and use a throwaway registry key.
+- Tests must never open real windows or write the developer's own settings, key, log, or `Run` value: patch `connect_dialog`, `save_settings`, and the log handler, and use a throwaway registry key. Tray menu actions a test triggers after `main()` returns need their own `save_settings` patch.
+- The screen is read only from the middle of the playing PotPlayer window, only while dark scenes are on, and each reading is reduced to one number in memory: never saved, sent, or logged beyond that number.
 - The pairing key must never reach logs, exceptions, tests, or Git. Only the `backlight` picture setting may be written, clamped to 0 to 100.
 - The TV connection must keep `suppress_origin=True`; webOS closes the socket otherwise.
 - Flag behavior that violates acceptance criteria, public contracts, authorization boundaries, data ownership, migration safety, idempotency, or rollback guarantees. State the concrete failure path and the safer path.

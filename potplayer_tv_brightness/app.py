@@ -19,7 +19,7 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
-from . import connect, potplayer
+from . import connect, potplayer, scene
 from .controller import Controller, RestoreStore
 from .tv import LGTV
 
@@ -51,6 +51,7 @@ _instance_mutex: Any = None  # single-instance handle, held until exit
 class Settings:
     tv_host: str = ""  # set by the connect window or scripts.tv_check --host
     movie_brightness: int = 80
+    dark_scene_brightness: int = 0  # 0: off; only applies above movie_brightness
 
 
 def load_settings(path: Path = SETTINGS_FILE) -> Settings:
@@ -62,7 +63,8 @@ def load_settings(path: Path = SETTINGS_FILE) -> Settings:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         brightness = max(0, min(100, int(data["movie_brightness"])))
-        return Settings(str(data["tv_host"]), brightness)
+        dark = max(0, min(100, int(data.get("dark_scene_brightness", 0))))
+        return Settings(str(data["tv_host"]), brightness, dark)
     except (OSError, ValueError, KeyError, TypeError) as error:
         log.warning("%s is invalid (%s); using defaults", path.name, error)
         return Settings()
@@ -152,6 +154,7 @@ def main() -> None:
         LGTV(settings.tv_host, KEY_FILE),
         RestoreStore(RESTORE_FILE),
         settings.movie_brightness,
+        settings.dark_scene_brightness,
     )
     stop = threading.Event()
     connecting = threading.Lock()  # one connect window at a time
@@ -161,6 +164,14 @@ def main() -> None:
             controller.target = settings.movie_brightness = value
             save_settings(settings)
             log.info("Movie brightness set to %d", value)
+
+        return action
+
+    def choose_dark(value: int) -> Any:
+        def action(icon: Any, item: Any) -> None:
+            controller.dark_target = settings.dark_scene_brightness = value
+            save_settings(settings)
+            log.info("Dark scene brightness set to %s", value or "Off")
 
         return action
 
@@ -203,12 +214,31 @@ def main() -> None:
             for value in PRESETS
         )
     )
+    dark_presets = pystray.Menu(
+        pystray.MenuItem(
+            "Off",
+            choose_dark(0),
+            checked=lambda item: controller.dark_target == 0,
+            radio=True,
+        ),
+        *(
+            pystray.MenuItem(
+                str(value),
+                choose_dark(value),
+                checked=lambda item, value=value: controller.dark_target == value,
+                radio=True,
+                enabled=lambda item, value=value: value > controller.target,
+            )
+            for value in PRESETS
+        ),
+    )
     icon = pystray.Icon(
         "potplayer-tv-brightness",
         icon_image(False),
         APP_NAME,
         pystray.Menu(
             pystray.MenuItem("Movie brightness", presets),
+            pystray.MenuItem("Dark scene brightness", dark_presets),
             pystray.MenuItem("Connect TV…", connect_tv),
             pystray.MenuItem(
                 "Start with Windows",
@@ -223,7 +253,11 @@ def main() -> None:
         shown: tuple[bool, str] | None = None
         while not stop.wait(POLL_S):
             try:
-                controller.tick(potplayer.is_watching(), time.monotonic())
+                window = potplayer.watching_window()
+                level = None
+                if window is not None and controller.dark_on:
+                    level = scene.picture_level(window)
+                controller.tick(window is not None, time.monotonic(), level)
             except Exception:
                 log.exception("Unexpected error")
             view = (controller.boosted, controller.status)
@@ -238,7 +272,10 @@ def main() -> None:
     def setup(icon: Any) -> None:
         icon.visible = True
         log.info(
-            "Started (TV %s, movie brightness %d)", settings.tv_host, controller.target
+            "Started (TV %s, movie brightness %d, dark scene brightness %s)",
+            settings.tv_host,
+            controller.target,
+            controller.dark_target or "Off",
         )
         worker.start()
         if first_run:

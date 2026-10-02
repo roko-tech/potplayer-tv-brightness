@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 
 ## [Unreleased]
 
+### Added
+
+- **Dark scene brightness** in the tray menu (Off by default). While PotPlayer plays, the app measures how bright the middle of the picture is twice a second. After 2 s of dark picture it sets the TV to the dark scene value, and after 1 s of bright picture it returns to the movie value. Fades to black, short flashes, and in-between scenes change nothing. The measurement is reduced to one number in memory and never saved or sent. Settings files from 0.1.0 load with it Off.
+
 ## [0.1.0] - 2026-09-27
 
 ### Added

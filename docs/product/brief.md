@@ -1,9 +1,9 @@
 # Product brief
 
-- Status: Accepted (v0.1.0)
+- Status: Accepted (v0.1.0 plus unreleased dark scene brightness)
 - Product owner: @rokogan
 - Technical owner: @rokogan
-- Last reviewed: 2026-09-27
+- Last reviewed: 2026-10-02
 
 ## Problem
 
@@ -39,6 +39,7 @@ The TV switches to the chosen movie brightness shortly after PotPlayer starts pl
 - Detect PotPlayer playing (not paused, stopped, minimized, hidden, or closed).
 - Set and restore OLED Pixel Brightness on an LG webOS TV over the local network.
 - Tray icon with status, movie brightness presets, Connect TV, Start with Windows, and Quit.
+- Optionally, a higher brightness during dark scenes, judged from the picture PotPlayer shows (Off by default).
 - A single-file Windows exe, and a first-run window that finds the TV on the network.
 
 ### Non-goals
@@ -59,6 +60,8 @@ The TV switches to the chosen movie brightness shortly after PotPlayer starts pl
 
 > Given the TV is at brightness 20 in picture mode "normal", when the owner plays a video in PotPlayer, then within 3 s the TV is at the movie brightness (80); when they pause, minimize, or close PotPlayer, then within 3 s it is back at 20.
 
+> Given Dark scene brightness is above the movie brightness, when a dark scene has been on screen for 2 s, then the TV is at the dark scene value; when the picture has been bright again for 1 s, then it is back at the movie brightness. Fades to black, short flashes, and in-between scenes change nothing, and every play starts at the movie brightness.
+
 Failure and recovery cases:
 
 - The TV is off or unreachable: nothing crashes; the change is retried every 10 s.
@@ -76,9 +79,11 @@ First-time setup:
 | LG firmware blocks the pairing certificate or the settings write | Medium: reported on 2026 firmware (C6, 43.21.60) | App cannot connect or change brightness | `scripts/tv_check.py` detects it; fallback is the luna notification-alert method (see ADR-0002) | @rokogan |
 | Restore lands on the wrong input | Low | Another input's brightness changes | Documented limitation; restore is limited to the original picture mode | @rokogan |
 | PotPlayer changes its message API | Low | No detection | Live check each PotPlayer upgrade | @rokogan |
+| Dark scene switches feel late, too frequent, or too rare | Medium | Visible brightness jumps, or dark scenes left dim | Off by default; 2 s and 1 s holds and a gap between the cut-offs; the log shows the level at each switch for tuning ([ADR-0005](../architecture/decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)) | @rokogan |
 
 ## Delivery slices
 
 1. (Done) Play/pause/minimize/close drives the TV brightness, with a crash-safe restore and a tray preset menu.
 2. (Done) First-time setup: connect a TV with one command and the Accept prompt; no built-in TV address.
 3. (Done) A single-file exe with a Connect window that finds the TV, Connect TV and Start with Windows in the tray ([ADR-0004](../architecture/decisions/0004-ship-a-single-file-exe-with-a-connect-window.md)).
+4. (Done, unreleased) Dark scene brightness: a higher value while the picture is dark ([ADR-0005](../architecture/decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)).
