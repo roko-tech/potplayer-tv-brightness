@@ -47,8 +47,8 @@ def _player_windows() -> list[int]:
     return found
 
 
-def is_watching() -> bool:
-    """True if a PotPlayer window is playing and is not minimized or hidden."""
+def watching_window() -> int | None:
+    """A PotPlayer window that is playing and is not minimized or hidden."""
     for hwnd in _player_windows():
         if not user32.IsWindowVisible(hwnd) or user32.IsIconic(hwnd):
             continue
@@ -63,5 +63,5 @@ def is_watching() -> bool:
             ctypes.byref(state),
         )
         if answered and state.value == PLAYING:
-            return True
-    return False
+            return hwnd
+    return None

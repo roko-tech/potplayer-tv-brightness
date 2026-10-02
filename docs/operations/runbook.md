@@ -1,6 +1,6 @@
 # Operations runbook
 
-- Status: Current (v0.1.0)
+- Status: Current (v0.2.0)
 - Service owner: @rokogan
 - Escalation contact: @rokogan
 - Last rehearsed: 2026-09-27 (exe first run, tray menu, and Quit on the owner's PC)

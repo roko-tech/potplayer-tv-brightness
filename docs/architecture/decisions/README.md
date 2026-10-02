@@ -19,3 +19,4 @@ Do not create ADRs for routine implementation details or easily reversible prefe
 | [0002](0002-control-tv-brightness-over-webos-ssap.md) | Accepted | Control TV brightness over webOS SSAP from a Python tray app |
 | [0003](0003-restore-per-picture-mode-with-a-persisted-debt.md) | Accepted | Restore per picture mode, with the original saved on disk |
 | [0004](0004-ship-a-single-file-exe-with-a-connect-window.md) | Accepted | Ship a single-file exe with a first-run Connect window |
+| [0005](0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md) | Accepted | Raise brightness in dark scenes from a screen measurement |

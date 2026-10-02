@@ -15,6 +15,12 @@ from typing import Protocol
 
 log = logging.getLogger(__name__)
 
+# A picture level is the luma (0-255) that 90% of the picture stays at or below:
+# how bright its brighter part is (see scene.py).
+DARK_BELOW = 70.0  # a scene darker than this counts as dark...
+LIGHT_ABOVE = 100.0  # ...until it gets brighter than this; in between, no change
+BLACK_BELOW = 2.0  # black frames (fades, cuts) say nothing about the scene
+
 
 class TVError(Exception):
     """The TV is unreachable, not paired, or rejected a request."""
@@ -78,6 +84,10 @@ class Controller:
     remembered per mode and only written back to that same mode. A restore
     that cannot happen yet (TV off, or in another mode after an HDR switch) is
     retried every ``retry_s`` seconds.
+
+    During a dark scene the target is ``dark_target`` instead, if that is
+    higher. A scene counts as dark after ``dark_s`` seconds of dark picture
+    levels, and no longer after ``light_s`` seconds of bright ones.
     """
 
     def __init__(
@@ -85,34 +95,52 @@ class Controller:
         tv: TV,
         store: RestoreStore,
         target: int,
+        dark_target: int = 0,
         *,
         settle_s: float = 1.0,
         retry_s: float = 10.0,
+        dark_s: float = 2.0,
+        light_s: float = 1.0,
     ) -> None:
         self.tv = tv
         self.store = store
         self.target = target
+        self.dark_target = dark_target  # 0, or anything not above target: off
         self.settle_s = settle_s
         self.retry_s = retry_s
+        self.dark_s = dark_s
+        self.light_s = light_s
         self.owed = store.load()  # picture mode -> original brightness
         self.boosted_to: int | None = None
         self.watching: bool | None = None  # None until the first settled state
+        self.dark = False  # a dark scene is on screen (settled)
         self.status = "Starting"
         self._seen: bool | None = None
         self._seen_since = 0.0
+        self._scene: bool | None = None  # what the latest picture level says
+        self._scene_since = 0.0
         self._retry_at = 0.0
 
     @property
     def boosted(self) -> bool:
         return self.boosted_to is not None
 
-    def tick(self, watching: bool, now: float) -> None:
-        """Feed one PotPlayer observation; act once it has held for settle_s."""
+    @property
+    def dark_on(self) -> bool:
+        """Whether dark scenes get their own brightness."""
+        return self.dark_target > self.target
+
+    def tick(self, watching: bool, now: float, level: float | None = None) -> None:
+        """Feed one PotPlayer observation; act once it has held for settle_s.
+
+        ``level`` is the picture level (0-255) from scene.py, if measured.
+        """
         if watching != self._seen:
             self._seen, self._seen_since = watching, now
         if self._seen != self.watching and now - self._seen_since >= self.settle_s:
             self.watching = self._seen
             self._retry_at = 0.0  # a new state deserves an immediate attempt
+        self._follow_scene(level, now)
         if self.watching is None or now < self._retry_at:
             return
         try:
@@ -130,8 +158,25 @@ class Controller:
         except TVError as error:
             log.warning("Restore on exit failed: %s", error)
 
+    def _follow_scene(self, level: float | None, now: float) -> None:
+        if not self.watching or not self.dark_on:
+            self.dark, self._scene = False, None  # every session starts normal
+            return
+        if level is not None and BLACK_BELOW <= level < DARK_BELOW:
+            dark = True
+        elif level is not None and level > LIGHT_ABOVE:
+            dark = False
+        else:  # in between, black, or not measured: no switch, and no pending one
+            dark = self.dark
+        if dark != self._scene:
+            self._scene, self._scene_since = dark, now
+        hold = self.dark_s if dark else self.light_s
+        if dark != self.dark and now - self._scene_since >= hold:
+            self.dark = dark
+            log.info("Picture level %.0f: %s", level, "dark" if dark else "not dark")
+
     def _boost(self) -> bool:
-        target = self.target
+        target = self.dark_target if self.dark else self.target
         if self.boosted_to == target:
             return True
         with self.tv.session() as tv:
@@ -145,7 +190,8 @@ class Controller:
             tv.set_backlight(target)
         self.boosted_to = target
         original = self.owed[picture.mode]
-        self._set_status(f"Watching: brightness {target} (restores {original})")
+        scene = "Watching a dark scene" if self.dark else "Watching"
+        self._set_status(f"{scene}: brightness {target} (restores {original})")
         return True
 
     def _restore(self) -> bool:

@@ -8,6 +8,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from potplayer_tv_brightness.controller import (
+    DARK_BELOW,
+    LIGHT_ABOVE,
     Controller,
     Picture,
     RestoreStore,
@@ -15,6 +17,11 @@ from potplayer_tv_brightness.controller import (
 )
 
 STEP = 0.5  # the app polls PotPlayer every 0.5 s
+# Picture levels (0-255), as scene.picture_level measures them.
+DARK = DARK_BELOW / 2
+NORMAL = LIGHT_ABOVE * 2
+BETWEEN = (DARK_BELOW + LIGHT_ABOVE) / 2  # no change either way
+BLACK = 0.0
 
 
 class FakeTV:
@@ -56,14 +63,27 @@ class ControllerTest(unittest.TestCase):
         self.tv = FakeTV()
         self.now = 0.0
 
-    def make(self, target: int = 80) -> Controller:
+    def make(self, target: int = 80, dark_target: int = 0) -> Controller:
         return Controller(
-            self.tv, RestoreStore(self.path), target, settle_s=1.0, retry_s=10.0
+            self.tv,
+            RestoreStore(self.path),
+            target,
+            dark_target,
+            settle_s=1.0,
+            retry_s=10.0,
+            dark_s=2.0,
+            light_s=1.0,
         )
 
-    def observe(self, controller: Controller, watching: bool, seconds: float) -> None:
+    def observe(
+        self,
+        controller: Controller,
+        watching: bool,
+        seconds: float,
+        level: float | None = None,
+    ) -> None:
         for _ in range(round(seconds / STEP)):
-            controller.tick(watching, self.now)
+            controller.tick(watching, self.now, level)
             self.now += STEP
 
     def owed_on_disk(self) -> dict[str, int]:
@@ -200,6 +220,125 @@ class ControllerTest(unittest.TestCase):
         self.tv.online = False
         controller.shutdown()
         self.assertEqual(self.owed_on_disk(), {"normal": 20})
+
+    # Dark scenes: their own brightness, then back to the movie value.
+    def watch_dark_scene(self) -> Controller:
+        """Movie value 40, dark scene value 70; ends 70 into a dark scene."""
+        controller = self.make(target=40, dark_target=70)
+        self.observe(controller, True, 2, NORMAL)
+        self.observe(controller, True, 3, DARK)
+        self.assertEqual(self.tv.writes, [("normal", 40), ("normal", 70)])
+        return controller
+
+    def test_dark_scene_raises_brightness_until_it_ends(self) -> None:
+        controller = self.make(target=40, dark_target=70)
+        self.observe(controller, True, 2, NORMAL)
+        self.assertEqual(self.tv.backlight, 40)
+
+        self.observe(controller, True, 1.5, DARK)  # not dark for 2 s yet
+        self.assertEqual(self.tv.backlight, 40)
+        self.observe(controller, True, 1, DARK)
+        self.assertEqual(self.tv.backlight, 70)
+        self.assertEqual(
+            controller.status, "Watching a dark scene: brightness 70 (restores 20)"
+        )
+
+        self.observe(controller, True, 0.5, NORMAL)  # a flash, e.g. lightning
+        self.assertEqual(self.tv.backlight, 70)
+        self.observe(controller, True, 1.5, NORMAL)
+        self.assertEqual(self.tv.backlight, 40)
+        self.assertEqual(
+            self.tv.writes, [("normal", 40), ("normal", 70), ("normal", 40)]
+        )
+        self.assertEqual(self.owed_on_disk(), {"normal": 20})
+
+    def test_black_frames_and_unmeasured_levels_change_nothing(self) -> None:
+        controller = self.watch_dark_scene()
+        self.observe(controller, True, 5, BLACK)  # fade to black
+        self.observe(controller, True, 5, None)  # e.g. a window covers it
+        self.assertEqual(self.tv.backlight, 70)
+
+        self.observe(controller, True, 2, NORMAL)
+        self.observe(controller, True, 5, BLACK)
+        self.observe(controller, True, 5, None)
+        self.assertEqual(self.tv.backlight, 40)
+
+    def test_levels_between_the_thresholds_keep_the_scene(self) -> None:
+        controller = self.watch_dark_scene()
+        self.observe(controller, True, 10, BETWEEN)
+        self.assertEqual(self.tv.backlight, 70)
+        self.observe(controller, True, 2, NORMAL)
+        self.observe(controller, True, 10, BETWEEN)
+        self.assertEqual(self.tv.backlight, 40)
+
+    def test_a_fade_through_black_does_not_switch(self) -> None:
+        for gap in (BLACK, None):  # black frames, or nothing measured
+            with self.subTest(gap=gap):
+                self.tv = FakeTV()
+                self.path.unlink(missing_ok=True)
+                controller = self.make(target=40, dark_target=70)
+                self.observe(controller, True, 2, NORMAL)
+                self.observe(controller, True, 0.5, DARK)  # fading out
+                self.observe(controller, True, 3, gap)
+                self.observe(controller, True, 0.5, DARK)  # fading in
+                self.observe(controller, True, 2, NORMAL)
+                self.assertEqual(self.tv.writes, [("normal", 40)])
+
+    def test_a_short_dark_spell_is_ignored(self) -> None:
+        controller = self.make(target=40, dark_target=70)
+        self.observe(controller, True, 2, NORMAL)
+        for _ in range(3):  # dark, then a level in between, which resets the wait
+            self.observe(controller, True, 1.5, DARK)
+            self.observe(controller, True, 0.5, BETWEEN)
+        self.assertEqual(self.tv.writes, [("normal", 40)])
+
+    def test_off_or_not_above_the_movie_value_does_nothing(self) -> None:
+        for dark_target in (0, 30, 40):
+            with self.subTest(dark_target=dark_target):
+                self.tv = FakeTV()
+                self.path.unlink(missing_ok=True)
+                controller = self.make(target=40, dark_target=dark_target)
+                self.observe(controller, True, 10, DARK)
+                self.assertEqual(self.tv.writes, [("normal", 40)])
+                self.assertFalse(controller.dark)
+
+    def test_pause_in_a_dark_scene_restores_the_original(self) -> None:
+        controller = self.watch_dark_scene()
+        self.observe(controller, False, 2)
+        self.assertEqual(self.tv.backlight, 20)
+        self.assertEqual(self.owed_on_disk(), {})
+        self.assertEqual(controller.status, "Idle")
+
+        self.observe(controller, True, 2, DARK)  # the next session starts normal
+        self.assertEqual(self.tv.writes[-1], ("normal", 40))
+        self.observe(controller, True, 2, DARK)
+        self.assertEqual(self.tv.backlight, 70)
+
+    def test_restart_in_a_dark_scene_keeps_the_true_original(self) -> None:
+        self.watch_dark_scene()  # then the app died at 70
+        restarted = self.make(target=40, dark_target=70)
+        self.observe(restarted, True, 2, NORMAL)  # reads 70 now, must not keep it
+        self.observe(restarted, True, 3, DARK)
+        self.assertEqual(self.owed_on_disk(), {"normal": 20})
+        self.observe(restarted, False, 2)
+        self.assertEqual(self.tv.backlight, 20)
+
+    def test_hdr_mode_is_left_alone_in_dark_scenes(self) -> None:
+        self.tv = FakeTV(mode="hdrStandard", backlight=100)
+        controller = self.make(target=40, dark_target=70)
+        self.observe(controller, True, 30, DARK)
+        self.assertEqual(self.tv.writes, [])
+        self.assertIn("HDR", controller.status)
+
+    def test_menu_changes_apply_during_a_dark_scene(self) -> None:
+        controller = self.watch_dark_scene()
+        controller.dark_target = 90
+        self.observe(controller, True, 0.5, DARK)
+        self.assertEqual(self.tv.backlight, 90)
+        controller.dark_target = 0  # Off
+        self.observe(controller, True, 0.5, DARK)
+        self.assertEqual(self.tv.backlight, 40)
+        self.assertFalse(controller.dark)
 
 
 class RestoreStoreTest(unittest.TestCase):
