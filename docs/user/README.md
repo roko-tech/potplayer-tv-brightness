@@ -52,9 +52,9 @@ With **Dark scene brightness** on, the app also checks how bright the picture is
 
 - When a scene stays dark for about 2 seconds, the TV goes up to the dark scene brightness. Once the picture has been bright again for about a second, it goes back to the movie brightness. So the change comes a moment after the scene changes, and the TV switches in one step, not a fade.
 - Fades to black, short flashes, and scenes that are neither dark nor bright don't switch it, so it doesn't flicker.
-- It measures the middle of the PotPlayer window, so black bars, subtitles, and the player's controls don't count. If another window covers the middle of PotPlayer, it doesn't measure.
+- It looks at the whole PotPlayer window and goes by its brighter part: a scene is dark only when nearly all of the picture is dark. So a dark character or object in front of a bright background doesn't count, while a dark scene with a small lamp, subtitles, or black bars still does. If another window covers the center of PotPlayer, it doesn't measure.
 - Each time playback starts, it starts at the movie brightness. Pause, minimize, and close still put your original brightness back, and HDR is still left alone.
-- The log shows the measured level at each switch, for example `Picture level 12: dark`. A scene counts as dark below 40 (on a scale of 0 to 255) and as bright again above 55.
+- The log shows the measured level at each switch, for example `Picture level 45: dark`. The level is how bright the picture is when you leave out its brightest tenth, on a scale of 0 to 255. A scene counts as dark below 70 and as bright again above 100.
 
 ## Files
 
@@ -93,7 +93,7 @@ The exe keeps its files in `%APPDATA%\PotPlayer TV Brightness` (paste that into 
 
 The app only talks to your TV on the local network: a search to find it, a request for its name, and the TV's remote API. It sends nothing else anywhere and logs no keys.
 
-With **Dark scene brightness** on, it reads the middle of the PotPlayer window from the screen twice a second while a video plays. Each reading is reduced to one number in memory and is never saved or sent; the log keeps only that number at each switch.
+With **Dark scene brightness** on, it reads the PotPlayer window from the screen twice a second while a video plays. Each reading is reduced to one number in memory and is never saved or sent; the log keeps only that number at each switch.
 
 ## Known limitations
 
@@ -103,7 +103,7 @@ With **Dark scene brightness** on, it reads the middle of the PotPlayer window f
 - Brightness settings belong to the TV's current input. If you switch the TV to another input or app while a movie is still playing and the movie then ends, the restore writes to that input's picture mode (if the mode name matches).
 - A picture mode change in the middle of a movie is not boosted until the next play, or the next dark scene switch.
 - Dark scene switches come about 2 seconds after a dark scene starts and about a second after it ends. The cut-offs are fixed, so a very dark film may stay at the dark scene brightness most of the time.
-- Dark scenes are not detected if PotPlayer uses exclusive fullscreen or plays protected video (the screen then reads as black), or while another window covers the middle of PotPlayer.
+- Dark scenes are not detected if PotPlayer uses exclusive fullscreen or plays protected video (the screen then reads as black), or while another window covers the center of PotPlayer.
 
 ## Run from source
 

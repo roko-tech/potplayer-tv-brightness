@@ -15,9 +15,10 @@ from typing import Protocol
 
 log = logging.getLogger(__name__)
 
-# Picture levels are average brightness on a 0-255 scale (see scene.py).
-DARK_BELOW = 40.0  # a scene darker than this counts as dark...
-LIGHT_ABOVE = 55.0  # ...until it gets brighter than this; in between, no change
+# A picture level is the luma (0-255) that 90% of the picture stays at or below:
+# how bright its brighter part is (see scene.py).
+DARK_BELOW = 70.0  # a scene darker than this counts as dark...
+LIGHT_ABOVE = 100.0  # ...until it gets brighter than this; in between, no change
 BLACK_BELOW = 2.0  # black frames (fades, cuts) say nothing about the scene
 
 
@@ -132,7 +133,7 @@ class Controller:
     def tick(self, watching: bool, now: float, level: float | None = None) -> None:
         """Feed one PotPlayer observation; act once it has held for settle_s.
 
-        ``level`` is the picture's average brightness (0-255), if measured.
+        ``level`` is the picture level (0-255) from scene.py, if measured.
         """
         if watching != self._seen:
             self._seen, self._seen_since = watching, now
@@ -161,13 +162,11 @@ class Controller:
         if not self.watching or not self.dark_on:
             self.dark, self._scene = False, None  # every session starts normal
             return
-        if level is None or level < BLACK_BELOW:
-            return
-        if level < DARK_BELOW:
+        if level is not None and BLACK_BELOW <= level < DARK_BELOW:
             dark = True
-        elif level > LIGHT_ABOVE:
+        elif level is not None and level > LIGHT_ABOVE:
             dark = False
-        else:
+        else:  # in between, black, or not measured: no switch, and no pending one
             dark = self.dark
         if dark != self._scene:
             self._scene, self._scene_since = dark, now

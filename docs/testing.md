@@ -61,8 +61,8 @@ packaging\build.cmd
 
 | Suite | Proves | Runs on |
 | --- | --- | --- |
-| `tests/test_controller.py` | Boost/restore rules: primary journey, 1 s settle, HDR skip, per-mode originals, TV unreachable, crash and restart, Quit. Dark scenes: 2 s in and 1 s out, flashes and short dark spells, black frames, levels between the cut-offs, Off, pause and restart in a dark scene, HDR, menu changes | Both |
-| `tests/test_scene.py` | Picture level: averaging in GDI's pixel order, the middle area, a real screen copy, no level for a missing or covered window | Windows |
+| `tests/test_controller.py` | Boost/restore rules: primary journey, 1 s settle, HDR skip, per-mode originals, TV unreachable, crash and restart, Quit. Dark scenes: 2 s in and 1 s out, flashes and short dark spells, black frames, a fade through black, levels between the cut-offs, Off, pause and restart in a dark scene, HDR, menu changes | Both |
+| `tests/test_scene.py` | Picture level: the luma 90% of the picture stays under, in GDI's pixel order; a dark subject on a bright background is not dark, a dark scene with a small lamp is; a real screen copy; no level for a missing or covered window | Windows |
 | `tests/test_tv.py` | SSAP protocol: saved key, first-use pairing, request/response matching, errors and timeouts, malformed address, `Origin` suppressed | Both |
 | `tests/test_app.py` | Settings defaults (no TV address), clamping, invalid file, files from 0.1.0 without the dark scene value; first run opens the Connect window, then the tray, or exits when it is closed; the Dark scene brightness submenu (values above the movie value only, saving); Start with Windows against a throwaway registry key; the exe's `%APPDATA%` folder and launch command; tray icon image; PotPlayer probe runs | Windows |
 | `tests/test_discovery.py` | TV search against a fake TV on localhost (real UDP and HTTP): name read once despite duplicate replies, never fetched from another host, non-LG devices ignored | Both |
@@ -88,16 +88,26 @@ Run these after changing `tv.py`, `potplayer.py`, or `scene.py`, after a TV firm
 4. Kill the app while a video plays: `restore.json` must keep the original. Restart it, then close PotPlayer: the original must come back.
 5. The exe as a new user: build it, make sure `%APPDATA%\PotPlayer TV Brightness` does not exist, and start `PotPlayer-TV-Brightness.exe` from File Explorer. The Connect window must list the TV, with Connect greyed out until it does; after Connect and Accept, the tray and a notification appear and the files land in `%APPDATA%`. Then pick a preset, play and pause a video, turn on Start with Windows, use Connect TV…, and Quit. Check for a Windows Firewall prompt, and scan the exe with Windows Defender. Repeat the first run in Windows Sandbox, a clean Windows without Python, with the exe marked as downloaded.
 
-6. Dark scenes: generate the clip below. Set **Dark scene brightness** above the movie brightness, then play the clip in PotPlayer, maximized or fullscreen, with nothing over the middle of it. It runs 12 s gray (level about 120), 12 s dark (20, with a 0.4 s flash at 19 s), 3 s black, 9 s dark (25), 12 s gray (110), 8 s in between (47), 4 s black, then 60 s gray. The padding keeps a run well under the "watched" thresholds of players and scrobblers. Expected:
+6. Dark scenes: generate the clip below. Set **Dark scene brightness** above the movie brightness, then play the clip in PotPlayer, maximized or fullscreen, with nothing over its center. The clip runs:
+   - from 0 s, gray (level about 120);
+   - from 10 s, dark (20) with a small lamp, and a 0.4 s flash at 17 s;
+   - from 22 s, 3 s black, then dark (25) from 25 s;
+   - from 32 s, gray (110);
+   - from 42 s, a dark subject (15) filling most of a bright background (140);
+   - from 54 s, gray, with a fade through black between 57 and 60.7 s (0.6 s dark, 2.5 s black, 0.6 s dark);
+   - from 66 s, an in-between level (85), then 4 s black from 74 s, then 60 s gray. The padding keeps a run well under the "watched" thresholds of players and scrobblers.
+
+   Expected:
    - the movie value first;
-   - the dark scene value about 2 s after 12 s;
-   - no change at the flash, the black, or the in-between part;
-   - the movie value about 1 s after 36 s.
+   - the dark scene value about 2 s after 10 s;
+   - no change at the flash, the black, or the dark part from 25 s;
+   - the movie value about 1 s after 32 s;
+   - no change after that: not for the dark subject, the fade through black, the in-between level, or the black.
 
    Pause, minimize, and close must still restore the original. The log shows one `Picture level N: dark` and one `Picture level N: not dark` line. With Off, nothing changes during the dark parts and the log has no `Picture level` lines.
 
    ```shell
-   ffmpeg -f lavfi -i color=c=0x787878:s=1920x1080:r=30:d=12 -f lavfi -i color=c=0x141414:s=1920x1080:r=30:d=7 -f lavfi -i color=c=0xC8C8C8:s=1920x1080:r=30:d=0.4 -f lavfi -i color=c=0x141414:s=1920x1080:r=30:d=4.6 -f lavfi -i color=c=0x000000:s=1920x1080:r=30:d=3 -f lavfi -i color=c=0x191919:s=1920x1080:r=30:d=9 -f lavfi -i color=c=0x6E6E6E:s=1920x1080:r=30:d=12 -f lavfi -i color=c=0x2F2F2F:s=1920x1080:r=30:d=8 -f lavfi -i color=c=0x000000:s=1920x1080:r=30:d=4 -f lavfi -i color=c=0x787878:s=1920x1080:r=30:d=60 -filter_complex "concat=n=10:v=1:a=0,format=yuv420p" -c:v libx264 -crf 18 dark-scene-test.mp4
+   ffmpeg -f lavfi -i color=c=0x787878:s=1920x1080:r=30:d=10 -f lavfi -i color=c=0x141414:s=1920x1080:r=30:d=7,drawbox=x=1500:y=150:w=300:h=200:color=0xDCDCDC:t=fill -f lavfi -i color=c=0xC8C8C8:s=1920x1080:r=30:d=0.4 -f lavfi -i color=c=0x141414:s=1920x1080:r=30:d=4.6,drawbox=x=1500:y=150:w=300:h=200:color=0xDCDCDC:t=fill -f lavfi -i color=c=0x000000:s=1920x1080:r=30:d=3 -f lavfi -i color=c=0x191919:s=1920x1080:r=30:d=7 -f lavfi -i color=c=0x6E6E6E:s=1920x1080:r=30:d=10 -f lavfi -i color=c=0x8C8C8C:s=1920x1080:r=30:d=12,drawbox=x=300:y=200:w=1320:h=680:color=0x0F0F0F:t=fill -f lavfi -i color=c=0x787878:s=1920x1080:r=30:d=3 -f lavfi -i color=c=0x141414:s=1920x1080:r=30:d=0.6 -f lavfi -i color=c=0x000000:s=1920x1080:r=30:d=2.5 -f lavfi -i color=c=0x141414:s=1920x1080:r=30:d=0.6 -f lavfi -i color=c=0x787878:s=1920x1080:r=30:d=5.3 -f lavfi -i color=c=0x555555:s=1920x1080:r=30:d=8 -f lavfi -i color=c=0x000000:s=1920x1080:r=30:d=4 -f lavfi -i color=c=0x787878:s=1920x1080:r=30:d=60 -filter_complex "concat=n=16:v=1:a=0,format=yuv420p" -c:v libx264 -crf 18 dark-scene-test.mp4
    ```
 
 Start the exe from File Explorer, not from a terminal inside another app. Programs started from a packaged app (such as the Claude desktop app) inherit its file and registry redirection: their `%APPDATA%` and `HKCU` writes land in that app's private copy, not the real ones.
@@ -110,12 +120,18 @@ Last run of step 5 on the owner's PC: 2026-09-27, same TV, 18.8 MB exe built wit
 
 Last run of step 5 in Windows Sandbox: 2026-09-27, Windows 10 without Python, the release exe marked as downloaded from GitHub. SmartScreen showed "Windows protected your PC" with "Unknown publisher"; More info, then Run anyway. The search found nothing, as expected behind the sandbox's NAT, and Connect stayed greyed out until the address was typed. After Accept on the TV the log read `Connecting`, `Paired`, `Started`; the icon sat under the tray's **^** arrow with status Idle; the menu showed all four items; Start with Windows wrote the `Run` value and showed its check mark; Quit exited. No firewall rule was needed or created. VirusTotal: 4 of 71 engines flagged the exe built with PyInstaller's stock launcher, 2 of 71 (Bkav Pro, SecureAge) the one with a locally compiled launcher; Windows Defender found nothing in either.
 
-Last run of step 6: 2026-10-02, same TV, from source on the branch (the exe was not rebuilt), with PotPlayer 64-bit maximized in a separate instance. The owner's playback chain makes dark grays darker on screen: the clip's 20, 25, and 47 read 12, 18, and 43, while 110 and 120 read as encoded.
-- Upgrade: a settings file without the new value started with `dark scene brightness Off`. Play gave 40, and about 9 s of dark picture changed nothing.
-- With the value at 70: play gave 40, and 70 came 2.3 s after the dark segment began, about 0.1 s of it the TV write.
-- The flash, the fade to black, and the 8 s at level 43 changed nothing. 40 came back about 1 s after the gray segment began.
-- Pause, resume, minimize, and close while playing gave 20, 40, 20, and 20, each within about 1.8 s.
-- The tray submenu itself was not clicked: screen control was not available for this run, and `test_app.py` drives its items instead.
+Last runs of step 6, 2026-10-02, same TV, from source on the branch, with PotPlayer 64-bit maximized in a separate instance. The owner's playback chain makes dark grays darker on screen: the clip's 20, 25, and 47 read 12, 18, and 43, while 110 and 120 read as encoded.
+- First version, average of the middle, with the earlier clip and the value at 70:
+  - An old settings file started with `dark scene brightness Off`, and dark picture changed nothing.
+  - With the value at 70, the TV went to 70 2.3 s into the dark part and back to 40 about 1 s after it.
+  - The flash, the fade to black, and the in-between part changed nothing.
+  - Pause, resume, minimize, and close while playing gave 20, 40, 20, and 20, each within about 1.8 s.
+- The owner's own viewing then showed bright scenes boosted when a dark character filled the middle of the picture. The same code, with the current clip at movie 40 and dark 80, reproduced it: 80 for the dark subject on the bright background (level 26), and 80 after the fade through black.
+- Current version, the brighter part of the whole window, same clip and values:
+  - 80 came 2.3 s into the dark part with the lamp (level 12), and 40 came back 1 s after the gray.
+  - The dark subject read 141, and neither it nor the fade through black, the in-between level (84), or the black changed anything.
+  - Close restored 20.
+- The tray submenu itself was not clicked by the test; the owner used it on their PC, and `test_app.py` drives its items.
 
 Not live-tested yet:
 - dark scenes in exclusive fullscreen, with PotPlayer partly covered, on monitors with different scaling, and on real films, where the cut-offs may need tuning;

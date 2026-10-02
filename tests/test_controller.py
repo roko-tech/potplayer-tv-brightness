@@ -271,6 +271,19 @@ class ControllerTest(unittest.TestCase):
         self.observe(controller, True, 10, BETWEEN)
         self.assertEqual(self.tv.backlight, 40)
 
+    def test_a_fade_through_black_does_not_switch(self) -> None:
+        for gap in (BLACK, None):  # black frames, or nothing measured
+            with self.subTest(gap=gap):
+                self.tv = FakeTV()
+                self.path.unlink(missing_ok=True)
+                controller = self.make(target=40, dark_target=70)
+                self.observe(controller, True, 2, NORMAL)
+                self.observe(controller, True, 0.5, DARK)  # fading out
+                self.observe(controller, True, 3, gap)
+                self.observe(controller, True, 0.5, DARK)  # fading in
+                self.observe(controller, True, 2, NORMAL)
+                self.assertEqual(self.tv.writes, [("normal", 40)])
+
     def test_a_short_dark_spell_is_ignored(self) -> None:
         controller = self.make(target=40, dark_target=70)
         self.observe(controller, True, 2, NORMAL)

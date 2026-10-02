@@ -3,6 +3,12 @@ from __future__ import annotations
 import sys
 import unittest
 
+from potplayer_tv_brightness.controller import DARK_BELOW, LIGHT_ABOVE
+
+BLACK, WHITE = (0, 0, 0, 0), (255, 255, 255, 0)  # BGRX, as GDI stores pixels
+SUBJECT, BACKGROUND = (15, 15, 15, 0), (140, 140, 140, 0)
+NIGHT, LAMP = (20, 20, 20, 0), (220, 220, 220, 0)
+
 
 @unittest.skipUnless(sys.platform == "win32", "screen capture uses Win32 GDI")
 class SceneTest(unittest.TestCase):
@@ -16,22 +22,23 @@ class SceneTest(unittest.TestCase):
         width, height = self.scene.SAMPLE
         return b"".join(bytes(p) for p in bgrx) * (width * height // len(bgrx))
 
-    def test_level_is_the_average_luma(self) -> None:
+    def test_level_is_the_luma_of_the_brighter_part(self) -> None:
         level = self.scene.level
-        self.assertEqual(level(self.pixels((0, 0, 0, 0))), 0)
-        self.assertEqual(level(self.pixels((255, 255, 255, 0))), 255)
-        self.assertEqual(level(self.pixels((0, 0, 0, 0), (255, 255, 255, 0))), 127.5)
+        self.assertEqual(level(self.pixels(BLACK)), 0)
+        self.assertEqual(level(self.pixels(WHITE)), 255)
+        self.assertEqual(level(self.pixels(BLACK, WHITE)), 255)
         # GDI stores blue first: pure blue is dark (29), pure red brighter (76).
         self.assertEqual(level(self.pixels((255, 0, 0, 0))), 29)
         self.assertEqual(level(self.pixels((0, 0, 255, 0))), 76)
 
-    def test_middle_leaves_out_bars_subtitles_and_controls(self) -> None:
-        middle = self.scene.middle
-        # A 4K window: 4:3 pillarbox bars end at x=480, 2.39:1 letterbox bars
-        # at y=277, and subtitles usually start below y=1800.
-        self.assertEqual(middle((0, 0, 3840, 2160)), (480, 360, 3360, 1800))
-        # A window on a monitor left of the main one has negative coordinates.
-        self.assertEqual(middle((-1920, 0, 0, 1080)), (-1680, 180, -240, 900))
+    def test_a_dark_subject_on_a_bright_background_is_not_dark(self) -> None:
+        # A dark character filling most of the picture; a sixth is bright.
+        picture = self.pixels(*[SUBJECT] * 10, *[BACKGROUND] * 2)
+        self.assertGreater(self.scene.level(picture), LIGHT_ABOVE)
+
+    def test_a_dark_scene_with_a_small_lamp_is_dark(self) -> None:
+        picture = self.pixels(*[NIGHT] * 23, LAMP)  # the lamp: 4% of the picture
+        self.assertLess(self.scene.level(picture), DARK_BELOW)
 
     def test_grab_reads_the_screen(self) -> None:
         width, height = self.scene.SAMPLE
@@ -43,7 +50,7 @@ class SceneTest(unittest.TestCase):
         import ctypes
 
         self.assertIsNone(self.scene.picture_level(0))
-        # The desktop window is under every other window, so its middle is
+        # The desktop window is under every other window, so its center is
         # covered (or not a top-level window at all): nothing to measure.
         desktop = ctypes.windll.user32.GetDesktopWindow()
         self.assertIsNone(self.scene.picture_level(desktop))

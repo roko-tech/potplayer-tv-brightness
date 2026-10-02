@@ -13,7 +13,7 @@ flowchart LR
     User[User] -->|plays, pauses, minimizes| PotPlayer[PotPlayer window]
     User -->|Connect, movie and dark scene brightness, Start with Windows, Quit| App[PotPlayer TV Brightness]
     App -->|WM_USER 0x5006 play state, window state| PotPlayer
-    App -->|GDI copy of the window's middle, 64x36| Screen[Screen under the PotPlayer window]
+    App -->|GDI copy of the window, 64x36| Screen[Screen under the PotPlayer window]
     App -->|SSDP search, then HTTP for its name, LAN| TV[LG webOS TV]
     App -->|SSAP over TLS WebSocket :3001, LAN| TV
     App -->|settings, key, pending restore, log| Files[(Local files)]
@@ -23,7 +23,7 @@ flowchart LR
 ## Runtime
 
 - **Main thread:** on first run (no TV address yet), the Tk Connect window; then the pystray tray icon and menu. pystray runs menu actions on this thread, so none of them may wait on the network, except Quit's bounded wait (15 s) for the restore.
-- **Poll thread:** every 0.5 s asks PotPlayer for its state, then calls `Controller.tick`. While PotPlayer plays and the dark scene value is above the movie value, it also measures how bright the picture is (about 20 ms) and passes that to `tick`. All brightness changes happen here, so a slow TV never blocks the menu.
+- **Poll thread:** every 0.5 s asks PotPlayer for its state, then calls `Controller.tick`. While PotPlayer plays and the dark scene value is above the movie value, it also measures how bright the picture is (about 33 ms, 9 ms of it CPU) and passes that to `tick`. All brightness changes happen here, so a slow TV never blocks the menu.
 - **Connect window workers:** the Connect window searches (SSDP, about 3 s) and pairs (up to 60 s for Accept) on short-lived threads that hand results back through a queue. **Connect TV…** opens the window on its own thread and then swaps the controller's TV.
 - A named mutex (`Local\potplayer-tv-brightness`) allows a single instance; a second start exits quietly.
 - **Quit** stops the poll thread, which restores the TV before the process exits.
@@ -39,7 +39,7 @@ flowchart LR
 | `discovery.py` | Find LG TVs with SSDP from every IPv4 address; read each TV's name | None | Standard library only | `find_tvs()`, `FoundTV` |
 | `connect.py` | The Tk Connect window: list found TVs, pair, explain failures | None (the caller saves the address) | `discovery`, `tv`, `controller` types, Tk, `Pillow` | `connect_dialog(host, key_file, icon)`, `explain()` |
 | `potplayer.py` | Which PotPlayer window, if any, is playing and not minimized or hidden | None | Win32 `user32` via `ctypes` | `watching_window()` |
-| `scene.py` | How bright the middle of a window is on screen, reduced to one number | None | Win32 `user32` and `gdi32` via `ctypes`, `Pillow` | `picture_level(hwnd)` |
+| `scene.py` | How bright the brighter part of a window's picture is on screen (the luma 90% of it stays under), reduced to one number | None | Win32 `user32` and `gdi32` via `ctypes`, `Pillow` | `picture_level(hwnd)` |
 | `app.py` | Settings, file locations, logging, tray, poll thread, single instance, Start with Windows | `settings.json`, log file, the `Run` value | All of the above, `pystray`, `Pillow` | `main()` (started by `run.pyw`) |
 
 Dependency direction: `app` → `connect` → `discovery`/`tv` → `controller`. The controller defines the TV port it needs, and `tv.py` implements it. `potplayer.py`, `scene.py`, and `discovery.py` are leaves; the controller only sees the number `scene.py` measures.
@@ -65,7 +65,7 @@ Git ignores all of them. **Start with Windows** adds one value, named after the 
 
 - TV calls use a fresh connection per operation with a 3 s timeout (60 s while an Accept prompt is on screen). A TV that is off or rebooting needs no reconnect logic. A malformed address is reported like an unreachable TV.
 - A PotPlayer state must hold for 1 s before the app acts (no flicker between playlist items).
-- A dark scene must hold for 2 s before the dark scene value applies, and a normal one for 1 s before the movie value returns. Black frames, levels between the two cut-offs, and missing measurements change nothing ([ADR-0005](decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)).
+- A dark scene must hold for 2 s before the dark scene value applies, and a normal one for 1 s before the movie value returns. Black frames, levels between the two cut-offs, and missing measurements change nothing and call off a pending switch ([ADR-0005](decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)).
 - A failed or deferred TV change is retried every 10 s.
 - The original brightness is saved to disk before the movie value is written, so a crash can never lose it.
 - Unexpected errors in the poll thread are logged and polling continues. An unexpected error in the Connect window is shown in the window instead of freezing it.

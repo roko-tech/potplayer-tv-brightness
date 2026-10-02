@@ -60,7 +60,7 @@ The exe is built on Windows only, outside CI, with `packaging\build.cmd` (needs 
 - TV network calls run on the poll thread or the Connect window's worker threads, with bounded timeouts. The tray thread may only wait for the poll thread on Quit, and that wait must stay bounded.
 - SSDP replies are untrusted: fetch a TV's name only from the replying address, bounded in time and size, with no XML parser and no proxy. Nothing connects to a found TV until the user clicks Connect.
 - Tests must never open real windows or write the developer's own settings, key, log, or `Run` value: patch `connect_dialog`, `save_settings`, and the log handler, and use a throwaway registry key. Tray menu actions a test triggers after `main()` returns need their own `save_settings` patch.
-- The screen is read only from the middle of the playing PotPlayer window, only while dark scenes are on, and each reading is reduced to one number in memory: never saved, sent, or logged beyond that number.
+- The screen is read only from the playing PotPlayer window, only while dark scenes are on, and each reading is reduced to one number in memory: never saved, sent, or logged beyond that number.
 - The pairing key must never reach logs, exceptions, tests, or Git. Only the `backlight` picture setting may be written, clamped to 0 to 100.
 - The TV connection must keep `suppress_origin=True`; webOS closes the socket otherwise.
 - Flag behavior that violates acceptance criteria, public contracts, authorization boundaries, data ownership, migration safety, idempotency, or rollback guarantees. State the concrete failure path and the safer path.

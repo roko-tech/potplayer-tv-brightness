@@ -1,22 +1,25 @@
 """How bright is the picture in PotPlayer's window right now?
 
-GDI copies the middle of the window from the screen into a 64x36 bitmap
-(StretchBlt), and its pixels are averaged into one number. The edges are left
-out because black bars, subtitles, and the player's own controls sit there.
-Nothing else is kept: the copy is reduced to that number in memory.
+GDI copies the window from the screen into a 64x36 bitmap (StretchBlt), which
+is reduced to one number in memory: the luma that 90% of the pixels stay at or
+below, which is how bright the brighter part of the picture is. A dark
+character in front of a bright background therefore reads as bright, while a
+dark scene with a small lamp, subtitles, or black bars still reads as dark.
+Nothing else is kept.
 """
 
 from __future__ import annotations
 
 import ctypes
 from ctypes import wintypes
+from itertools import accumulate
 
-from PIL import Image, ImageStat
+from PIL import Image
 
 SAMPLE = (64, 36)
 GA_ROOT = 2
 SRCCOPY = 0x00CC0020
-COLORONCOLOR = 3  # sample pixels instead of blending them: faster, same average
+COLORONCOLOR = 3  # sample pixels instead of blending them, which is faster
 DIB_RGB_COLORS = 0
 # Physical pixels on every monitor, whatever the scaling, for the window's
 # position and the screen alike.
@@ -80,10 +83,10 @@ gdi32.DeleteDC.argtypes = [wintypes.HDC]
 
 
 def picture_level(hwnd: int) -> float | None:
-    """Average brightness (0-255) of the middle of the window.
+    """How bright (0-255) the brighter part of the window's picture is.
 
     None if the screen cannot be read (for example, while a UAC prompt shows)
-    or another window covers the middle of the picture.
+    or another window covers the center of the picture.
     """
     previous = user32.SetThreadDpiAwarenessContext(PER_MONITOR_AWARE_V2)
     try:
@@ -93,35 +96,17 @@ def picture_level(hwnd: int) -> float | None:
             return None
         if not user32.ClientToScreen(hwnd, ctypes.byref(origin)):
             return None
-        left, top, right, bottom = middle(
-            (origin.x, origin.y, origin.x + rect.right, origin.y + rect.bottom)
-        )
-        if right <= left or bottom <= top:
+        if rect.right <= 0 or rect.bottom <= 0:
             return None
-        center = wintypes.POINT((left + right) // 2, (top + bottom) // 2)
+        center = wintypes.POINT(origin.x + rect.right // 2, origin.y + rect.bottom // 2)
         if user32.GetAncestor(user32.WindowFromPoint(center), GA_ROOT) != hwnd:
             return None
-        pixels = grab((left, top, right, bottom))
+        pixels = grab(
+            (origin.x, origin.y, origin.x + rect.right, origin.y + rect.bottom)
+        )
         return None if pixels is None else level(pixels)
     finally:
         user32.SetThreadDpiAwarenessContext(previous)
-
-
-def middle(rect: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
-    """The part of a window that shows picture whatever the video's shape.
-
-    It leaves out 1/8 of the width on each side, which covers 4:3 pillarbox
-    bars, and 1/6 of the height at the top and bottom, which covers 2.39:1
-    letterbox bars (about 1/8 each), most subtitles, and player controls.
-    """
-    left, top, right, bottom = rect
-    width, height = right - left, bottom - top
-    return (
-        left + width // 8,
-        top + height // 6,
-        right - width // 8,
-        bottom - height // 6,
-    )
 
 
 def grab(rect: tuple[int, int, int, int]) -> bytes | None:
@@ -160,6 +145,10 @@ def grab(rect: tuple[int, int, int, int]) -> bytes | None:
 
 
 def level(pixels: bytes) -> float:
-    """Average luma (0-255) of SAMPLE-sized BGRX pixels."""
+    """The luma (0-255) that 90% of SAMPLE-sized BGRX pixels stay at or below."""
     image = Image.frombuffer("RGB", SAMPLE, pixels, "raw", "BGRX", 0, 1)
-    return float(ImageStat.Stat(image.convert("L")).mean[0])
+    counts = image.convert("L").histogram()
+    needed = 0.9 * sum(counts)
+    return float(
+        next(luma for luma, seen in enumerate(accumulate(counts)) if seen >= needed)
+    )
