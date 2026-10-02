@@ -30,7 +30,7 @@ Right-click the sun icon:
 - **Start with Windows**: start the app when you sign in.
 - **Quit**: puts the original brightness back and exits.
 
-<img src="docs/images/tray-menu.png" width="360" alt="The tray menu opened from the sun icon: Movie brightness with presets from 30 to 100 (80 selected), Connect TV, Start with Windows (checked), and Quit.">
+<img src="docs/images/tray-menu.png" width="360" alt="The tray menu opened from the sun icon: Movie brightness, Dark scene brightness (open, showing Off and presets from 30 to 100, with 30 to 50 greyed out because the movie brightness is 50, and 80 selected), Connect TV, Start with Windows (checked), and Quit.">
 
 The icon turns amber while the movie brightness is on. Hover it to see the status. More in the [user guide](docs/user/README.md).
 

@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-02
+
 ### Added
 
 - **Dark scene brightness** in the tray menu (Off by default). While PotPlayer plays, the app checks twice a second how bright the brighter part of the picture is: the level 90% of it stays under. A dark character in front of a bright background therefore doesn't count as a dark scene. After 2 s of dark picture it sets the TV to the dark scene value, and after 1 s of bright picture it returns to the movie value. Fades to black, short flashes, and in-between scenes change nothing. Each measurement is reduced to one number in memory and never saved or sent. Settings files from 0.1.0 load with it Off.
@@ -33,5 +35,6 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 - A malformed TV address (for example one with a port) now gives a clear "Cannot connect" error, retried like an unreachable TV, instead of an unexpected-error traceback.
 - `tv_check --set` clamps the value to 0 to 100, like every other brightness write.
 
-[Unreleased]: https://github.com/roko-tech/potplayer-tv-brightness/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/roko-tech/potplayer-tv-brightness/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/roko-tech/potplayer-tv-brightness/releases/tag/v0.2.0
 [0.1.0]: https://github.com/roko-tech/potplayer-tv-brightness/releases/tag/v0.1.0

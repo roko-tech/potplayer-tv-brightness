@@ -1,6 +1,6 @@
 # Threat model
 
-- Status: Current (v0.1.0 plus unreleased dark scene brightness)
+- Status: Current (v0.2.0)
 - Owner: @rokogan
 - Last reviewed: 2026-10-02 (dark scene screen measurement)
 

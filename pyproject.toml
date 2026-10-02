@@ -1,6 +1,6 @@
 [project]
 name = "potplayer-tv-brightness"
-version = "0.1.0"
+version = "0.2.0"
 description = "Tray app that raises LG C2 OLED brightness while PotPlayer plays and restores it on pause, minimize, or close"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"

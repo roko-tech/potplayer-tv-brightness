@@ -1,6 +1,6 @@
 # Product brief
 
-- Status: Accepted (v0.1.0 plus unreleased dark scene brightness)
+- Status: Accepted (v0.2.0)
 - Product owner: @rokogan
 - Technical owner: @rokogan
 - Last reviewed: 2026-10-02
@@ -86,4 +86,4 @@ First-time setup:
 1. (Done) Play/pause/minimize/close drives the TV brightness, with a crash-safe restore and a tray preset menu.
 2. (Done) First-time setup: connect a TV with one command and the Accept prompt; no built-in TV address.
 3. (Done) A single-file exe with a Connect window that finds the TV, Connect TV and Start with Windows in the tray ([ADR-0004](../architecture/decisions/0004-ship-a-single-file-exe-with-a-connect-window.md)).
-4. (Done, unreleased) Dark scene brightness: a higher value while the picture is dark ([ADR-0005](../architecture/decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)).
+4. (Done, v0.2.0) Dark scene brightness: a higher value while the picture is dark ([ADR-0005](../architecture/decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)).
