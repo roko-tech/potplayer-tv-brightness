@@ -5,7 +5,7 @@ description = "Tray app that raises LG C2 OLED brightness while PotPlayer plays 
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "pillow==12.3.0",
+  "pillow==13.0.0",
   "pystray==0.19.5",
   "websocket-client==1.9.2",
 ]
