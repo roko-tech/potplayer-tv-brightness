@@ -12,6 +12,11 @@ from potplayer_tv_brightness.controller import Picture, TVError
 from potplayer_tv_brightness.tv import LGTV
 
 REGISTERED = {"type": "registered", "id": "register", "payload": {"client-key": "k1"}}
+BLACKLISTED = {
+    "type": "error",
+    "id": "register",
+    "error": "403 Pairing rejected: blacklisted certificate detected",
+}
 
 
 class FakeWebSocket:
@@ -111,8 +116,42 @@ class LGTVTest(unittest.TestCase):
         ws = FakeWebSocket([{"type": "error", "id": "register", "error": "denied"}])
         with self.assertRaises(TVError), self.tv(ws).session():
             pass
+        self.assertEqual(len(ws.sent), 1)  # only a blacklisted signature is retried
         self.assertTrue(ws.closed)
         self.assertFalse(self.key_file.exists())
+
+    def test_blacklisted_signature_pairs_unsigned(self) -> None:
+        self.key_file.write_text("k1", encoding="utf-8")
+        ws = FakeWebSocket([BLACKLISTED, REGISTERED])
+        with self.tv(ws).session():
+            pass
+        signed, unsigned = (message["payload"] for message in ws.sent)
+        self.assertIn("signatures", signed["manifest"])
+        self.assertNotIn("signatures", unsigned["manifest"])
+        self.assertNotIn("signed", unsigned["manifest"])
+        self.assertIn("READ_SETTINGS", unsigned["manifest"]["permissions"])
+        self.assertIn("WRITE_NOTIFICATION_ALERT", unsigned["manifest"]["permissions"])
+        self.assertEqual(unsigned["client-key"], "k1")
+
+    def test_unsigned_session_writes_through_a_closed_alert(self) -> None:
+        self.key_file.write_text("k1", encoding="utf-8")
+        alert = {"type": "response", "id": "1", "payload": {"returnValue": True}}
+        alert["payload"]["alertId"] = "a1"
+        closed = {"type": "response", "id": "2", "payload": {"returnValue": True}}
+        ws = FakeWebSocket([BLACKLISTED, REGISTERED, alert, closed])
+        with self.tv(ws).session() as session:
+            session.set_backlight(80)
+        create, close = ws.sent[2:]
+        self.assertEqual(create["uri"], "ssap://system.notifications/createAlert")
+        self.assertEqual(
+            create["payload"]["onclose"],
+            {
+                "uri": "luna://com.webos.settingsservice/setSystemSettings",
+                "params": {"category": "picture", "settings": {"backlight": 80}},
+            },
+        )
+        self.assertEqual(close["uri"], "ssap://system.notifications/closeAlert")
+        self.assertEqual(close["payload"], {"alertId": "a1"})
 
     def test_rejected_request_raises(self) -> None:
         rejected = {"type": "error", "id": "1", "error": "401 insufficient permissions"}

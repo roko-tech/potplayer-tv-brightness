@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-12
+
+### Fixed
+
+- The app works again on LG firmware that rejects its pairing manifest with "blacklisted certificate detected" (seen on an LG C2 after a 2026 update, and reported on C5 and C6 models). The Connect window said the firmware blocks the app. It now pairs without the signature and changes the brightness through a TV notification that it closes at once. TVs that accept the signature work as before, and existing pairings keep working without a new Accept prompt.
+
 ## [0.2.0] - 2026-10-02
 
 ### Added
@@ -35,6 +41,7 @@ All notable changes to this project are documented here. Follow [Keep a Changelo
 - A malformed TV address (for example one with a port) now gives a clear "Cannot connect" error, retried like an unreachable TV, instead of an unexpected-error traceback.
 - `tv_check --set` clamps the value to 0 to 100, like every other brightness write.
 
-[Unreleased]: https://github.com/roko-tech/potplayer-tv-brightness/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/roko-tech/potplayer-tv-brightness/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/roko-tech/potplayer-tv-brightness/releases/tag/v0.2.1
 [0.2.0]: https://github.com/roko-tech/potplayer-tv-brightness/releases/tag/v0.2.0
 [0.1.0]: https://github.com/roko-tech/potplayer-tv-brightness/releases/tag/v0.1.0

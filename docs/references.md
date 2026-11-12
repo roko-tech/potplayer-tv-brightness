@@ -31,6 +31,8 @@ These primary or canonical sources informed the starter. Links were reviewed on 
 - [lgtv2](https://github.com/hobbyquaker/lgtv2) — source of `pairing.json`, the signed manifest that grants `WRITE_SETTINGS` (MIT).
 - [aiowebostv issue #728](https://github.com/home-assistant-libs/aiowebostv/issues/728) — `WRITE_SETTINGS` is granted per connection by the signed manifest sent at pairing, not by the client key; some firmware now rejects that certificate as blacklisted.
 - [lg_webos_brightness_adjustment](https://github.com/zedr32/lg_webos_brightness_adjustment) — on a C6 with firmware 43.21.60 the direct brightness write returns 401; it switches to the luna notification-alert method (ADR-0002's fallback).
+- [aiowebostv 7d17b72](https://github.com/home-assistant-libs/aiowebostv/commit/7d17b72) (PR #729, 2026-11-08) — sends the signed manifest first and retries unsigned, with both permission lists merged, when the TV rejects the signature; ADR-0006 does the same.
+- [bscpylgtv](https://github.com/chros73/bscpylgtv) (MIT) — `luna_request` and `set_settings`: the alert payload whose `onclose` runs `luna://com.webos.settingsservice/setSystemSettings`, used by ADR-0006.
 - [LG Developer Mode app](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app) — Developer Mode is for installing and testing apps under development and needs an LG developer account; turning it off uninstalls those apps. This app uses none of it.
 
 ## Packaging

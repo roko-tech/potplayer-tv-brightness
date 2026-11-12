@@ -1,6 +1,6 @@
 # Operations runbook
 
-- Status: Current (v0.2.0)
+- Status: Current (v0.2.1)
 - Service owner: @rokogan
 - Escalation contact: @rokogan
 - Last rehearsed: 2026-09-27 (exe first run, tray menu, and Quit on the owner's PC)
@@ -52,5 +52,5 @@ There is no data migration; `settings.json` and `restore.json` are plain JSON. S
 | "TV unreachable, retrying" | Is the TV on? Did its address change? | **Connect TV…** (and reserve the TV's IP in the router) |
 | Pairing prompt every time | Log shows pairing; key file missing or rejected | Accept the prompt; check that `tv-client-key.txt` is writable |
 | "Restore waiting for picture mode" | TV is in a different picture mode than when the movie started | Switch back to that mode; or Quit, set the value with the remote, delete `restore.json`, and start again |
-| Writes fail after a TV firmware update | The Connect window or `tv_check --set 20` reports that the firmware blocks it | See the follow-up in [ADR-0002](../architecture/decisions/0002-control-tv-brightness-over-webos-ssap.md) |
+| Writes fail after a TV firmware update | The Connect window or `tv_check --set 20` reports that the firmware blocks it, or `--set N` no longer reads back N | A blacklisted signature is already handled by the unsigned fallback in [ADR-0006](../architecture/decisions/0006-pair-unsigned-and-write-through-an-alert-when-lg-blacklists-the-signature.md). If alert writes stop landing too, see its follow-up |
 | No tray icon | Log says "Already running" | Another copy is running: look under the tray's **^** arrow, or in Task Manager |

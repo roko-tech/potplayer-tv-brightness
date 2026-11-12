@@ -1,6 +1,6 @@
 # Product brief
 
-- Status: Accepted (v0.2.0)
+- Status: Accepted (v0.2.1)
 - Product owner: @rokogan
 - Technical owner: @rokogan
 - Last reviewed: 2026-10-02
@@ -52,8 +52,9 @@ The TV switches to the chosen movie brightness shortly after PotPlayer starts pl
 
 - Windows 10/11. The exe bundles Python 3.12; running from source needs it. The TV and PC are on the same trusted home network.
 - "Screen brightness" means OLED Pixel Brightness (the `backlight` setting), not the black-level "Brightness" setting.
-- The TV accepts `ssap://settings/setSystemSettings` for picture settings. Verified on the LG C2 with webOS 25 (firmware 33.x); a future firmware could remove it.
+- The TV accepts `ssap://settings/setSystemSettings` for picture settings. Verified on the LG C2 with webOS 25 (firmware 33.x).
 - No Developer Mode: `WRITE_SETTINGS` comes from LG's signed manifest sent at pairing. The test TV has Developer Mode on for other apps, so this rests on external evidence ([references](../references.md#lg-tv-integration)).
+- Firmware that blacklists that signature still accepts an unsigned pairing and a closed alert's luna `setSystemSettings` call. Verified on the same C2 on 2026-11-12, after a firmware update ([ADR-0006](../architecture/decisions/0006-pair-unsigned-and-write-through-an-alert-when-lg-blacklists-the-signature.md)); a future firmware could remove it.
 - PotPlayer answers its window-message API (`WM_USER` + `0x5006`) with its play state.
 
 ## Primary journey and acceptance
@@ -76,7 +77,7 @@ First-time setup:
 
 | Risk or unknown | Likelihood | Impact | Validation or mitigation | Owner |
 | --- | --- | --- | --- | --- |
-| LG firmware blocks the pairing certificate or the settings write | Medium: reported on 2026 firmware (C6, 43.21.60) | App cannot connect or change brightness | `scripts/tv_check.py` detects it; fallback is the luna notification-alert method (see ADR-0002) | @rokogan |
+| LG firmware blocks the pairing certificate or the settings write | Happened: 2026 firmware (C6 43.21.60; the owner's C2, found 2026-11-12) | App cannot connect or change brightness | The app falls back to unsigned pairing and alert writes ([ADR-0006](../architecture/decisions/0006-pair-unsigned-and-write-through-an-alert-when-lg-blacklists-the-signature.md)); `scripts/tv_check.py --set N` shows whether writes still land | @rokogan |
 | Restore lands on the wrong input | Low | Another input's brightness changes | Documented limitation; restore is limited to the original picture mode | @rokogan |
 | PotPlayer changes its message API | Low | No detection | Live check each PotPlayer upgrade | @rokogan |
 | Dark scene switches feel late, too frequent, or too rare | Medium | Visible brightness jumps, or dark scenes left dim | Off by default; 2 s and 1 s holds and a gap between the cut-offs; the log shows the level at each switch for tuning ([ADR-0005](../architecture/decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md)) | @rokogan |

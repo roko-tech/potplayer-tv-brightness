@@ -81,7 +81,7 @@ The exe keeps its files in `%APPDATA%\PotPlayer TV Brightness` (paste that into 
 | "The TV declined" | Click **Connect**, then select **Accept** on the TV. |
 | "No answer from … in time" | Click **Connect** and select **Accept** within 60 seconds. |
 | "Can't reach a TV at …" | The TV is off or the address is wrong. Type just the address, like `192.168.1.50`. |
-| "This TV's firmware blocks the method this app uses" | See Known limitations: the app cannot work with that TV yet. |
+| "This TV's firmware blocks the method this app uses" | The TV refused both ways this app knows to change the brightness. See Known limitations. |
 | Nothing happens when you start the exe | It is already running. Look for the sun icon, maybe under the **^** arrow. |
 | Tooltip says "TV unreachable" | The TV is off, or its address changed: use **Connect TV…**. |
 | Nothing happens when playing | Is PotPlayer minimized or paused? Check the log. |
@@ -98,7 +98,7 @@ With **Dark scene brightness** on, it reads the PotPlayer window from the screen
 ## Known limitations
 
 - Windows only. Tested with an LG C2 on webOS 25 and PotPlayer 64-bit.
-- Some newer LG firmware blocks the method this app uses (reported on a 2026 C6 with firmware 43.21.60). A firmware update could do the same to older models.
+- LG firmware from 2026 on (reported on C5 and C6 models, and seen on the C2 after an update) blocks the method this app tries first. The app then pairs a second way and changes the brightness through a TV notification that it closes at once. Tested on that updated C2. A later update could block this second way too, and then the app cannot work with that TV.
 - The exe is not signed, so Windows warns on first run, and a few antivirus products flag it. For v0.1.0, Windows Defender found nothing, and on VirusTotal 2 of 71 engines (Bkav Pro and SecureAge) flag it with generic heuristics that hit many unsigned apps. The release notes link the full report.
 - Brightness settings belong to the TV's current input. If you switch the TV to another input or app while a movie is still playing and the movie then ends, the restore writes to that input's picture mode (if the mode name matches).
 - A picture mode change in the middle of a movie is not boosted until the next play, or the next dark scene switch.

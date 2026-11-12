@@ -54,7 +54,7 @@ Software dimming of the signal. It does not change the panel's light output and 
 
 ### Follow-up
 
-If a firmware update rejects the write, `uv run python -m scripts.tv_check --set N` shows it; then implement the alert fallback.
+If a firmware update rejects the write, `uv run python -m scripts.tv_check --set N` shows it; then implement the alert fallback. Done in [ADR-0006](0006-pair-unsigned-and-write-through-an-alert-when-lg-blacklists-the-signature.md) on 2026-11-12, after the owner's C2 began rejecting the signature.
 
 ## Validation
 
