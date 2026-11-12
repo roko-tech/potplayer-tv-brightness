@@ -1,6 +1,6 @@
 # Architecture overview
 
-- Status: Current (v0.2.0)
+- Status: Current (v0.2.1)
 - Owner: @rokogan
 - Last reviewed: 2026-10-02
 
@@ -35,7 +35,7 @@ flowchart LR
 | Module | Responsibility | Owns data | May depend on | Public contract |
 | --- | --- | --- | --- | --- |
 | `controller.py` | Boost/restore rules: settle time, HDR skip, per-mode originals, retries, dark scenes | `restore.json` via `RestoreStore` | Standard library only | `Controller.tick(watching, now, level)`, `shutdown()`; `TV`/`TVSession` protocols, `Picture`, `TVError` |
-| `tv.py` | LG SSAP client: pairing, read picture mode and brightness, set brightness | `tv-client-key.txt` | `controller` types, `websocket-client` | `LGTV(host, key_file).session()` |
+| `tv.py` | LG SSAP client: pairing (unsigned if the TV blacklists LG's signature), read picture mode and brightness, set brightness (through a closed alert when unsigned) | `tv-client-key.txt` | `controller` types, `websocket-client` | `LGTV(host, key_file).session()` |
 | `discovery.py` | Find LG TVs with SSDP from every IPv4 address; read each TV's name | None | Standard library only | `find_tvs()`, `FoundTV` |
 | `connect.py` | The Tk Connect window: list found TVs, pair, explain failures | None (the caller saves the address) | `discovery`, `tv`, `controller` types, Tk, `Pillow` | `connect_dialog(host, key_file, icon)`, `explain()` |
 | `potplayer.py` | Which PotPlayer window, if any, is playing and not minimized or hidden | None | Win32 `user32` via `ctypes` | `watching_window()` |
@@ -70,4 +70,4 @@ Git ignores all of them. **Start with Windows** adds one value, named after the 
 - The original brightness is saved to disk before the movie value is written, so a crash can never lose it.
 - Unexpected errors in the poll thread are logged and polling continues. An unexpected error in the Connect window is shown in the window instead of freezing it.
 
-Decisions: [ADR-0002](decisions/0002-control-tv-brightness-over-webos-ssap.md) (TV control and stack), [ADR-0003](decisions/0003-restore-per-picture-mode-with-a-persisted-debt.md) (restore rules), [ADR-0004](decisions/0004-ship-a-single-file-exe-with-a-connect-window.md) (exe and Connect window), and [ADR-0005](decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md) (dark scenes).
+Decisions: [ADR-0002](decisions/0002-control-tv-brightness-over-webos-ssap.md) (TV control and stack), [ADR-0003](decisions/0003-restore-per-picture-mode-with-a-persisted-debt.md) (restore rules), [ADR-0004](decisions/0004-ship-a-single-file-exe-with-a-connect-window.md) (exe and Connect window), [ADR-0005](decisions/0005-raise-brightness-in-dark-scenes-from-a-screen-measurement.md) (dark scenes), and [ADR-0006](decisions/0006-pair-unsigned-and-write-through-an-alert-when-lg-blacklists-the-signature.md) (firmware that blacklists the signature).

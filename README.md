@@ -80,6 +80,6 @@ uv run python -m scripts.tv_check        # live: read the TV's picture mode and 
 
 [MIT](LICENSE).
 
-The TV pairing manifest, `potplayer_tv_brightness/pairing.json`, is LG's signed remote-app manifest as published in [lgtv2](https://github.com/hobbyquaker/lgtv2) (MIT, Copyright (c) Sebastian Raff). The exe also bundles Python and other libraries, including pystray (LGPL-3.0); their licenses are in each release's `THIRD-PARTY-NOTICES.txt`.
+The TV pairing manifest, `potplayer_tv_brightness/pairing.json`, is LG's signed remote-app manifest as published in [lgtv2](https://github.com/hobbyquaker/lgtv2) (MIT, Copyright (c) Sebastian Raff). On TVs that reject it, brightness changes use the notification-alert method from [bscpylgtv](https://github.com/chros73/bscpylgtv) (MIT). The exe also bundles Python and other libraries, including pystray (LGPL-3.0); their licenses are in each release's `THIRD-PARTY-NOTICES.txt`.
 
 Not affiliated with LG Electronics or the makers of PotPlayer.
